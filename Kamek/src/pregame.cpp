@@ -1,6 +1,7 @@
 #include <game.h>
 #include "levelinfo.h"
 #include <newer.h>
+#include <gameLanguage.h>
 
 class PregameLytHandler {
 	public:
@@ -52,6 +53,7 @@ class PregameLytHandler {
 
 extern char CurrentLevel;
 extern char CurrentWorld;
+extern bool isFinalBattle;
 
 void LoadPregameStyleNameAndNumber(m2d::EmbedLayout_c *layout) {
 	nw4r::lyt::TextBox
@@ -67,7 +69,8 @@ void LoadPregameStyleNameAndNumber(m2d::EmbedLayout_c *layout) {
 	dLevelInfo_c::entry_s *level = dLevelInfo_c::s_info.searchBySlot(CurrentWorld, CurrentLevel);
 	if (level) {
 		wchar_t convLevelName[160];
-		const char *srcLevelName = dLevelInfo_c::s_info.getNameForLevel(level);
+		// edited by wakanameko base txt is here: const char *srcLevelName = dLevelInfo_c::s_info.getNameForLevel(level);
+		const wchar_t *srcLevelName = dLevelInfo_c::s_info.getNameForLevel(level);
 		int i = 0;
 		while (i < 159 && srcLevelName[i]) {
 			convLevelName[i] = srcLevelName[i];
@@ -78,8 +81,23 @@ void LoadPregameStyleNameAndNumber(m2d::EmbedLayout_c *layout) {
 		LevelName->SetString(convLevelName);
 
 		wchar_t levelNumber[32];
-		wcscpy(levelNumber, L"World ");
-		getNewerLevelNumberString(level->displayWorld, level->displayLevel, &levelNumber[6]);
+
+		if (SetGameLanguage == 0){	// EN message by NewerTeam
+			wcscpy(levelNumber, L"World ");
+			getNewerLevelNumberString(level->displayWorld, level->displayLevel, &levelNumber[6]);
+		}
+		if (SetGameLanguage == 1){	// JP message by wakanameko
+			wcscpy(levelNumber, L"ワールド ");
+			getNewerLevelNumberString(level->displayWorld, level->displayLevel, &levelNumber[5]);
+		}
+		if (SetGameLanguage == 2){	// DE message by Vadenimo
+			wcscpy(levelNumber, L"Welt ");
+			getNewerLevelNumberString(level->displayWorld, level->displayLevel, &levelNumber[5]);
+		}
+		if (SetGameLanguage == 3){	// IT message by Jacopo Plays
+			wcscpy(levelNumber, L"Mondo ");
+			getNewerLevelNumberString(level->displayWorld, level->displayLevel, &levelNumber[6]);
+		}
 
 		LevelNum->SetString(levelNumber);
 
@@ -95,13 +113,28 @@ void LoadPregameStyleNameAndNumber(m2d::EmbedLayout_c *layout) {
 		LevelNumShadow->SetString(levelNumber);
 
 	} else {
-		LevelNameShadow->SetString(L"Not found in LevelInfo!");
-		LevelName->SetString(L"Not found in LevelInfo!");
+		if (SetGameLanguage == 0){	// EN messages by NewerTeam
+			LevelNameShadow->SetString(L"Not found in LevelInfo!");
+			LevelName->SetString(L"Not found in LevelInfo!");
+		}
+		if (SetGameLanguage == 1){	// JP messages by wakanameko
+			LevelNameShadow->SetString(L"レベルがみつかりません!");
+			LevelName->SetString(L"レベルがみつかりません!");
+		}
+		if (SetGameLanguage == 2){	// DE messages by Vadenimo
+			LevelNameShadow->SetString(L"Nicht auffindbar in Levelinfo!");
+			LevelName->SetString(L"Nicht auffindbar in Levelinfo!");
+		}
+		if (SetGameLanguage == 3){	// IT messages by Jacopo Plays
+			LevelNameShadow->SetString(L"Non trovato nel LevelInfo!");
+			LevelName->SetString(L"Non trovato nel LevelInfo!");
+		}
 	}
 }
 
 #include "fileload.h"
 void PregameLytHandler::hijack_loadLevelNumber() {
+	isFinalBattle = false;
 	LoadPregameStyleNameAndNumber(&layout);
 
 	nw4r::lyt::Picture *LevelSample;

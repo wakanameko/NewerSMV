@@ -34,3 +34,5 @@ modules:
 #  - processed/classic_controller.yaml
   - processed/bossMegaGoomba.yaml
   - processed/codehandler.yaml
+  
+  - processed/soundtest.yaml

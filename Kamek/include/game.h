@@ -33,7 +33,11 @@ float cos(float x);
 float sin(float x);
 float ceil(float x);
 float floor(float x);
+float pow(float x, float y);
+//float sqrt(float x){return pow(x, 0.5f);}
 }
+
+
 enum Direction {
 	RIGHT = 0,
 	LEFT = 1,
@@ -63,6 +67,8 @@ void *DVD_GetFile(void *dvdclass2, const char *arc, const char *file, u32 *lengt
 
 int MakeRandomNumber(int count);
 int MakeRandomNumberForTiles(int count);
+inline int RandInt(int min, int max) { return MakeRandomNumber(max - min) + min; }
+inline float RandFloat(float min, float max) { return ((float)MakeRandomNumber(10000) / 10000.0f) * (max - min) + min; }
 
 
 extern int Player_Active[4];
@@ -204,6 +210,13 @@ bool IsWideScreen();
 
 #define SAVE_BIT_NO_SUPER_GUIDE 0x40
 
+#define SAVE_CHIMP_VISITED 0x1
+#define SAVE_CHIMP_ITEMBOWLING 0x2
+#define SAVE_CHIMP_PENGUINSLIDE 0x4
+#define SAVE_CHIMP_SANDSLIDE 0x8
+#define SAVE_CHIMP_GEARMO 0x10
+#define SAVE_CHIMP_BULLETBILLPARKOUR 0x20
+
 
 class SaveFirstBlock {
 public:
@@ -280,6 +293,8 @@ public:
 	void SetLevelCondition(int world, int level, int cond);
 	void UnsetLevelCondition(int world, int level, int cond);
 	bool CheckIfCoinCollected(int world, int level, int num);
+	void OrR5AgaginstByteFromWorldAvailableArrayAt0x32ofWorldData(u32 unk1, u32 unk2);
+	void ClearR5FromByteInWorldAvailableArrayAt0x32ofWorldData(u32 unk1, u32 unk2);
 };
 
 class SaveFile {
@@ -302,6 +317,10 @@ public:
 	SaveBlock *GetQSBlock(int id);
 
 	bool CheckIfWriting(); // 0x800E0540
+
+	void SaveCurrentData_Maybe();
+	void create_hash_for_savefile();
+	void WriteSavefileToRegularBuffer();
 };
 
 class SaveHandler {
@@ -422,6 +441,7 @@ u32 QueryGlobal5758(u32 check);
 void SaveGame(void *classDoesntMatter, bool isQuick);
 
 #include <actors.h>
+void *CreateObject(short classID, int settings, char something);
 void *CreateParentedObject(short classID, void *parent, int settings, char something);
 void *CreateChildObject(short classID, void *parent, int settings, int unk1, int unk2);
 
@@ -500,12 +520,15 @@ public:
 	u32 _0;
 	u32 _4;
 	u32 _8;
-	u32 _otherDatum[38];
+	u32 _C;
+	u32 flags;
+	u32 _otherDatum[36];
 
 	static WLClass *instance;
 
 	void demoControlAllPlayers();
 	void disableDemoControl(bool uselessVar);
+	void activateStandardAnim(int id);	//Luigi phsics
 };
 
 
@@ -596,6 +619,11 @@ class mMtx {
 };
 
 
+enum HTxtAlignment {
+	HALIGN_LEFT,
+	HALIGN_MID,
+	HALIGN_RIGHT,
+};
 
 namespace nw4r {
 	namespace math {
@@ -627,6 +655,20 @@ namespace ut {
 				*((u32*)this) = *((u32*)&other);
 				return *this;
 			}
+
+			// GXColor& operator!=(const GXColor &other) {
+			// 	return this->r != other.r
+			// 		|| this->g != other.g
+			// 		|| this->b != other.b
+			// 		|| this->a != other.a;
+			// }
+
+			// GXColor& operator==(const GXColor &other) {
+			// 	return this->r == other.r
+			// 		&& this->g == other.g
+			// 		&& this->b == other.b
+			// 		&& this->a == other.a;
+			// }
 	};
 
 	class Rect {
@@ -739,9 +781,19 @@ namespace lyt {
 		virtual ~Material();
 
 		// cheating a bit here
-		u8 _[0x3C];
+		u32 _0[3]; //0
+		u16 blackBlendingR; //10
+		u16 blackBlendingG;	//12
+		u16 blackBlendingB;	//14
+		u16 blackBlendingA;	//16
+		u16 whiteBlendingR;	//18
+		u16 whiteBlendingG;	//1A
+		u16 whiteBlendingB;	//1C
+		u16 whiteBlendingA;	//1D
+		u8 _1F[0x1D]; //1F
+
 		// this is actually a pointer to more stuff, not just texmaps
-		TexMap *texMaps;
+		TexMap *texMaps; //3C
 	};
 
 	class Pane {
@@ -857,19 +909,31 @@ namespace lyt {
 
 		wchar_t *stringBuf;
 
-		ut::Color colour1, colour2;
-		void *font; // actually a ut::ResFont or whatever
+		ut::Color colour1, colour2;		// 0xDC, 0xE0
+		void *font; // actually a ut::ResFont or whatever	// 0xE4
 
-		float fontSizeX, fontSizeY;
-		float lineSpace, charSpace;
+		float fontSizeX, fontSizeY;		// 0xE8, 0xEC
+		float lineSpace, charSpace;		// 0xF0, 0xF4
 
-		void *tagProc; // actually a TagProcessor
+		void *tagProc; // actually a TagProcessor 	// 0xF8
 
-		u16 bufferLength;
-		u16 stringLength;
+		u16 bufferLength;				// 0xFC
+		u16 stringLength;				// 0xFE
 
-		u8 alignment;
-		u8 flags;
+		u8 alignment;					// 0xFF
+		u8 flags; 						// 0x100
+
+		// u8 pad[3];
+
+		float textLen; // New
+
+		inline u8 GetHorizontalTextAlignment() {
+			return (this->alignment % 3);
+		}
+
+		inline bool IsHAlignment(HTxtAlignment align) {
+			return (this->alignment % 3) == align;
+		}
 	};
 
 	class Picture : public Pane {
@@ -1176,6 +1240,25 @@ namespace EGG {
 			Vec camPos, target, camUp;
 	};
 
+
+	class SomeRectangle {
+		public:
+			float left;
+			float bottom;
+			float right;
+			float top;
+	};
+
+
+	class SimpleViewport {
+		public:
+			SomeRectangle rect;
+			float width;
+			float height;
+			float aspectRatio;
+	};
+	
+
 	class ProjectOrtho /* : public something? */ {
 		public:
 			virtual u32 getProjectionType();
@@ -1338,6 +1421,15 @@ public:
 };
 
 
+struct ccCollType {
+    enum Value {
+        Normal,
+        Circle,
+        TrapezoidUD,
+        TrapezoidLR,
+    };
+};
+
 class ActivePhysics {
 public:
 	struct Info; // forward declaration
@@ -1369,9 +1461,11 @@ public:
 	float firstFloatArray[8];
 	float secondFloatArray[8];
 	Vec2 positionOfLastCollision;
+
 	u16 result1;
 	u16 result2;
 	u16 result3;
+
 	u8 collisionCheckType;
 	u8 chainlinkMode;
 	u8 layer;
@@ -1394,6 +1488,13 @@ public:
 	float right();
 	float left();
 	float xCenter();
+
+    float getCenterPosX();
+    float getCenterPosY();
+    float getLeftPos();
+    float getRightPos();
+    float getTopPos();
+    float getUnderPos();
 
 	// Plus more stuff that isn't needed in the public API, I'm pretty sure.
 	
@@ -1662,6 +1763,9 @@ class collisionMgr_c {
 	public:
 		collisionMgr_c();
 		virtual ~collisionMgr_c();
+		// collisionMgr_c* next; // custom field, originally an unused vtable
+
+		int getSakaUpDown(u8 dir);
 
 		dStageActor_c *owner;
 		sensorBase_s *pBelowInfo, *pAboveInfo, *pAdjacentInfo;
@@ -1929,7 +2033,10 @@ class __attribute__((move_vtable(0x60))) fBase_c {
 public:
 	u32 id;
 	u32 settings;
-	u16 name;
+	union {	// more sprites (base is "u16 name" only)
+		u16 name;
+		u16 profileId;
+	};
 	u8 _A;
 	u8 _B;
 	u8 _C;
@@ -1982,6 +2089,7 @@ public:
 
 	static fBase_c *search(Actors name, fBase_c *previous = 0);
 	static fBase_c *search(u32 id);
+	static fBase_c *searchByProfileId(u16 profileId, fBase_c *previous = 0);	// more sprites
 	static fBase_c *searchByBaseType(int type, fBase_c *previous);
 };
 
@@ -2043,13 +2151,19 @@ public:
 	Vec max_speed;
 	S16Vec rot;
 	S16Vec _106;
-	u32 _10C;
-	u32 _110;
+	float mSpeedF;
+	float mMaxSpeedF;
 	float y_speed_inc;
-	u32 _118;
+	float mMaxFallSpeed;
+	/*u32 _10C;		// NewerSMBW
+	u32 _110;	
+	float y_speed_inc;
+	u32 _118;	*/
 	float x_speed_inc;
 	u32 _120;
 	bool visible;
+
+	//dAcPy_c *doSearchNearPlayer(Vec2 *distance, Vec2 *relative_pos);	// related Komboo
 
 	dActor_c();
 
@@ -2086,7 +2200,14 @@ public:
 	u8 _34A, _34B;
 	u8 *spriteByteStorage;
 	u16 *spriteShortStorage;
-	u16 spriteFlagNum;
+	// u16 spriteFlagNum;
+	union {
+		u16 spriteFlagNum;
+		struct {
+			u8 eventId2; // nybble 1-2
+			u8 eventId1; // nybble 3-4
+		};
+	};
 	u64 spriteFlagMask;
 	u32 _360;
 	u16 spriteSomeFlag;
@@ -2269,6 +2390,29 @@ class dPlayerInput_c {
 		int rollingHistoryOfTwoModifiedByFlags[4][10];
 };
 
+struct PlayerSpeedDataInner {	//Luigi begin
+	float _0;
+	float _4;
+	float _8;
+	float _c;
+	float _10;
+	float _14;
+	float _18;
+	float _1c;
+	float _20;
+};
+static_assert(sizeof(PlayerSpeedDataInner) == 0x24);
+
+struct PlayerSpeedData {
+	float _0;
+	float _4;
+	float _8;
+	PlayerSpeedDataInner _c;
+	PlayerSpeedDataInner _30;
+	PlayerSpeedDataInner _54;
+};
+static_assert(sizeof(PlayerSpeedData) == 0x78);	//Luigi end
+
 
 class daPlBase_c : public dStageActor_c {
 	public:
@@ -2278,12 +2422,25 @@ class daPlBase_c : public dStageActor_c {
 		u8 data3[0xEA4 - 0x460];
 		dPlayerInput_c input;
 		// We're at 0x1008 now
-		u8 data2[0x1418 - 0x1008];
+		// u8 data2[0x1418 - 0x1008];	//NewerSMBW
+		u8 data2[0x1060 - 0x1008];	// Luigi physics
+		PlayerSpeedData* mpSpeedDataNormal;
+		PlayerSpeedData* mpSpeedDataStar;
+		// We're at 0x1068 now
+		u8 data4[0x10D4 - 0x1068];
+		u32 _10d4;
+		// We're at 0x10D8 now
+		u8 data5[0x1418 - 0x10D8];
 		dStateWrapper_c<daPlBase_c> demoStates;
 		u32 demoStateParam;
 		u32 _1458, _145C;
 		u8 _1460;
 		dStateWrapper_c<daPlBase_c> states2;
+		u8 _14a0[4];
+		u32 mAction;
+		u32 _14a8[(0x14D4 - 0x14A8) / sizeof(u32)];
+
+		static const float sc_DirSpeed[2];
 
 		void justFaceSpecificDirection(int direction);
 		void moveInDirection(float *targetX, float *speed);
@@ -2296,16 +2453,264 @@ class daPlBase_c : public dStageActor_c {
 		void clearFlag(int flag);
 		bool testFlag(int flag);
 
+		bool isSaka();
+		float getSakaMoveAccele(u8 dir);
+		float getSakaStopAccele(u8 dir);
+
+		void icePowerChange(int);
+
+		const PlayerSpeedData* getSpeedData();
+		void getSpeedDataInner(PlayerSpeedDataInner*);
+
+		s16 getMukiAngle(u8 dir);
+
+		void startSound(int soundId, int);
+
 		static daPlBase_c *findByID(int id);
 };
+static_assert(offsetof(daPlBase_c, mpSpeedDataNormal) == 0x1060);
+static_assert(offsetof(daPlBase_c, demoStates) == 0x1418);
+static_assert(offsetof(daPlBase_c, _14a8) == 0x14A8);
+
+
+class dPlayerModelBase_c {
+	// dunno what's public and what's private here
+	// don't really care
+public:
+	dPlayerModelBase_c(u8 player_id);		// 800D5420
+	virtual ~dPlayerModelBase_c();			// 800D55D0
+
+	mHeapAllocator_c allocator;
+	u32 _20;
+	u32 _24;
+	m3d::anmChr_c someAnimation[2]; // actually PlayerAnim's
+	char yetAnotherAnimation[40]; // actually m3d::banm_c afaics -- is it even 40 bytes?
+	Vec HeadPos; // maybe not an array
+	Vec HatPos; // maybe not an array
+	Mtx finalMatrix;
+	Mtx firstMatrix;
+	Vec headOffs;
+	Vec pos;
+	u8 player_id_1;
+	u8 player_id_2;
+	u8 powerup_id;
+	u8 powerup_tex;
+	int current_anim;
+	int last_anim_maybe;
+	u32 _15C;
+	int someFlags;
+	u32 _164;
+	u32 _168; // related to jump_strings
+	u32 _16C;
+	u32 _170;
+	u32 _174;
+	u8 _178;
+	char padding[3]; // not needed?
+	u32 model_visibility_flags_maybe; // 0x100=star glow, 0x200=star effects
+	u32 mode_maybe;
+	float _184;
+	float _188;
+	u32 _18C;
+	char someArray[6][12]; // some unknown class/struct
+	char _1D8[0x24];
+	short _1FC;
+	short _1FE;
+	short _200;
+	char padding_[2]; // not needed?
+	u32 _204;
+	u32 _208;
+
+	class ModelThing {
+		public:
+			m3d::mdl_c body, head;
+	};
+
+	virtual int _vf0C();						// 800D6DA0
+	virtual void prepare();					// 800D5720
+	virtual void finaliseModel();				// 800D5740
+	virtual void update();						// 800D5750
+	virtual void update3DStuff();				// 800D5760
+	virtual void _vf20();						// 800D6D90
+	virtual void draw();						// 800D5C70
+	virtual ModelThing *getCurrentModel();				// 800D5870
+	virtual int getCurrentResFile();			// 800D62D0
+	virtual void setPowerup(u8 powerup_id);	// 800D5730
+	virtual void setPowerupTexture();			// 800D5CC0
+	virtual void _vf38();						// 800D6D80
+	virtual void _vf3C();						// 800BD750
+	virtual void enableStarColours();			// 800D6D70
+	virtual void disableStarColours();			// 800D6D60
+	virtual void enableStarEffects();			// 800BD740
+	virtual void disableStarEffects();			// 800BD730
+	virtual void getModelMatrix(u32 unk, Mtx *dest);	// 800D5820
+	virtual int _vf54();						// 80318D0C
+	virtual bool _vf58(int type, char *buf, bool unk); // 800D6930
+	virtual void startAnimation(int id, float updateRate, float unk, float frame);	// 800D5EC0
+	virtual int _vf60();						// 800D6920
+	virtual void _vf64(int id, float unk1, float unk2, float unk3); // 800D62F0
+	virtual void _vf68(int id, float unk);		// 800D63E0
+	virtual void _vf6C();						// 800D62E0
+	virtual void _vf70();						// 800D6690
+	virtual void _vf74();						// 800D66A0
+	virtual void _vf78();						// 800D66B0
+	virtual void SomethingRelatedToPenguinAnims();	// 800D66C0
+	virtual void _vf80();						// 800D6A20
+	virtual void _vf84(float frame);			// 800D5D00
+	virtual void _vf88(float frame);			// 800D5D70
+	virtual void _vf8C(float updateRate);		// 800D5D80
+	virtual void setUpdateRateForAnim1(float updateRate);	// 800D5DF0
+	virtual void _vf94();						// 800D6D40
+	virtual int _vf98();						// 800D6D30
+	virtual void _vf9C();						// 800D6D20
+	virtual int _vfA0();						// 800D6D10
+	virtual void _vfA4();						// 800D6D00
+	virtual int _vfA8();						// 800D6CF0
+	virtual void _vfAC(bool blah);						// 800BD720
+
+	// I won't even bother with non-virtual functions....
+
+	// Abood: But I will
+    bool isAnmStop()
+    {
+        return someAnimation[0].isAnimationDone();
+    }
+
+    float getAnmFrameMax() const
+    {
+        return someAnimation[0]._28;
+    }
+
+    float checkAnmFrame(float frame)
+    {
+        return someAnimation[0].querySomething(frame);
+    }
+};
+
+
+class dPyAnm_HIO_c {
+public:
+	u8 mID;
+	float mRate;
+	float mBlendDuration;
+};
+static_assert(sizeof(dPyAnm_HIO_c) == 0xC);
+
+
+class dPyAnmMain_HIO_c {
+public:
+	dPyAnm_HIO_c mPyAnm_HIO[177];
+};
+static_assert(sizeof(dPyAnmMain_HIO_c) == 0x84C);
+
+
+class dPyMdlBase_HIO_c {
+public:
+	u32 _0[0x28 / sizeof(u32)];
+	dPyAnmMain_HIO_c mPyAnmMain_HIO;
+	u32 _874[(0x950 - 0x874) / sizeof(u32)];
+};
+static_assert(sizeof(dPyMdlBase_HIO_c) == 0x950);
+
+
+class dPlayerModelHandler_c {
+public:
+	dPlayerModelHandler_c(u8 player_id);	// 800D6DB0
+	virtual ~dPlayerModelHandler_c();		// 800D6EF0
+
+	dPlayerModelBase_c *mdlClass;	// might be dPlayerModel_c ?
+
+	int loadModel(u8 player_id, int powerup_id, int unk);	// 800D6EE0
+	void update();											// 800D6F80
+	void setMatrix(Mtx *matrix);							// 800D6FA0
+	void setSRT(Vec position, S16Vec rotation, Vec scale);	// 800D7030
+	void callVF20();										// 800D70F0
+	void draw();											// 800D7110
+
+	void setAnm(int anmID, float rate, float blendDuration, float frame) {
+		mdlClass->startAnimation(
+			anmID,
+			rate,
+			blendDuration,
+			frame
+		);
+	}
+	
+	void setAnm(int anmID, float blendDuration, float frame) {
+		mdlClass->startAnimation(
+			anmID,
+			getAnmRate(anmID),
+			blendDuration,
+			frame
+		);
+	}
+	
+	void setAnm(int anmID, float frame) {
+		mdlClass->startAnimation(
+			anmID,
+			getAnmRate(anmID),
+			getAnmBlendDuration(anmID),
+			frame
+		);
+	}
+
+	static float getAnmRate(int anmID) {
+		return m_hio.mPyAnmMain_HIO.mPyAnm_HIO[anmID].mRate;
+	}
+
+	static float getAnmBlendDuration(int anmID) {
+		return m_hio.mPyAnmMain_HIO.mPyAnm_HIO[anmID].mBlendDuration;
+	}
+
+private:
+	int hasMatrix;	// might be bool ?
+
+	void allocPlayerClass(u8 player_id);					// 800D6E00
+
+	static dPyMdlBase_HIO_c m_hio;
+};
+
 
 class dAcPy_c : public daPlBase_c {
 	public:
 		// Can't be assed to build full headers right now
 		void *getYoshi(); // 80139A90
 
+		void setWaterWalkFlag();
+		void jumpExecAir();
+
+		// Actually a virtual function of dPlBase_c, but we can guarantee that
+		// instances of dAcPy_c will definitely call this one specifically
+		int isStar() const;
+
 		static dAcPy_c *findByID(int id);
+		static dAcPy_c *findNearestPlayer(Vec2 pos, float dist = 0) {
+			dAcPy_c *nearest = 0;
+			float nearestDist = -1;
+
+			for (int i = 0; i < 4; i++) {
+				dAcPy_c *player = dAcPy_c::findByID(i);
+				if (!player) continue;
+
+				float d = sqrtf((player->pos.x - pos.x) * (player->pos.x - pos.x) + (player->pos.y - pos.y) * (player->pos.y - pos.y));
+				if ((d < dist || dist <= 0) && (nearestDist == -1 || d < nearestDist)) {
+					nearestDist = d;
+					nearest = player;
+				}
+			}
+
+			return nearest;
+		}
+public:
+	u32 _14d4[(0x1564 - 0x14D4) / sizeof(u32)];
+	int jumpSoundRelated;
+	u32 _1568[(0x27CC - 0x1568) / sizeof(u32)];
+	u8 _27cc; // Some sort of direction
+	u32 _27d0[(0x2A60 - 0x27D0) / sizeof(u32)];
+	dPlayerModelHandler_c modelHandler;
+	u32 _2a6c[(0x2BA8 - 0x2A6C) / sizeof(u32)];
 };
+static_assert(offsetof(dAcPy_c, _14d4) == 0x14D4);
+static_assert(offsetof(dAcPy_c, _2a6c) == 0x2A6C);
 
 daPlBase_c *GetPlayerOrYoshi(int id);
 
@@ -2514,6 +2919,7 @@ public:
 	virtual void bouncePlayerWhenJumpedOn(void *player);
 	virtual void addScoreWhenHit(void *other); // Other is dPlayer
 	virtual void _vf254(void *other);
+	//virtual void YoshiFumiJumpSet(dEn_c *apThis, dActor_c *apOther); // bounce likes when step spikes // I realized that it is reversed as the vf258 already after I reversed. SHIT
 	virtual void _vf258(void *other);
 	virtual void _vf25C(void *other); // calls vf250
 	virtual void _vf260(void *other); // AcPy/PlBase? plays the SE_EMY_FUMU_%d sounds based on some value
@@ -2541,6 +2947,9 @@ public:
 	void bouncePlayer(void* player, float bounceHeight);
 
 	void killByDieFall(dStageActor_c *killedBy);
+	
+	void fireballInvalid(ActivePhysics *apThis, ActivePhysics *apOther);
+	void iceballInvalid(ActivePhysics *apThis, ActivePhysics *apOther);
 
 	// States
 	USING_STATES(dEn_c);
@@ -2711,6 +3120,57 @@ class dWaterManager_c {
 		void setGeometry(VEC3 *pos, float width, float height, int blockID);
 };
 
+class PTMF {
+public:
+	u32 classOffset;
+	u32 vtableOffset;
+	u32 funcOrVtableLocation;
+};
+
+class BgGmAc {
+public:
+	VEC3 field_0;
+	float field_C;
+	float field_10;
+	u8 autoscrollPathID;
+	u8 autoscrollUnk11;
+	u8 autoscrollAtEndRelated;
+	u8 autoscrollAtEnd;
+	u8 autoscrollMode;
+	u8 field_19;
+	u8 isAutoscrolling;
+	u8 _1B;
+};
+
+class dBgTexMng_c : public m3d::scnLeaf_c {
+public:
+	mAllocator_c allocator;
+	u32 texture;
+	u32 field_28;
+	u32 field_2C;
+	u8 field_30;
+	u8 field_31;
+	u8 field_32;
+	u8 field_33;
+	u32 firstAnimatedTile;
+	float field_38;
+	float field_3C;
+	float field_40;
+	u8 _44;
+	u8 _45;
+	u8 _46;
+	u8 _47;
+	u8 _48;
+	u8 _49;
+	u8 _4A;
+	u8 _4B;
+	u8 _4C;
+	u8 _4D;
+	u8 _4E;
+	u8 _4F;
+	u32 field_50;
+};
+
 class BgGmBase : public dBase_c {
 public:
 	struct something_s {
@@ -2748,6 +3208,317 @@ public:
 	beets_s beets1[100];
 	beets_s beets2[100];
 	// TODO, a lot
+	/*Here's a big mess RSM done*/
+	u8 _8FDE0;
+	u8 _8FDE1;
+	u8 _8FDE2;
+	u8 _8FDE3;
+	u8 _8FDE4;
+	u8 _8FDE5;
+	u8 _8FDE6;
+	u8 _8FDE7;
+	u8 _8FDE8;
+	u8 _8FDE9;
+	u8 _8FDEA;
+	u8 _8FDEB;
+	u8 _8FDEC;
+	u8 _8FDED;
+	u8 _8FDEE;
+	u8 _8FDEF;
+	u8 _8FDF0;
+	u8 _8FDF1;
+	u8 _8FDF2;
+	u8 _8FDF3;
+	u8 _8FDF4;
+	u8 _8FDF5;
+	u8 _8FDF6;
+	u8 _8FDF7;
+	u8 _8FDF8;
+	u8 _8FDF9;
+	u8 _8FDFA;
+	u8 _8FDFB;
+	u8 _8FDFC;
+	u8 _8FDFD;
+	u8 _8FDFE;
+	u8 _8FDFF;
+	u8 _8FE00;
+	u8 _8FE01;
+	u8 _8FE02;
+	u8 _8FE03;
+	u8 _8FE04;
+	u8 _8FE05;
+	u8 _8FE06;
+	u8 _8FE07;
+	u8 _8FE08;
+	u8 _8FE09;
+	u8 _8FE0A;
+	u8 _8FE0B;
+	u8 _8FE0C;
+	u8 _8FE0D;
+	u8 _8FE0E;
+	u8 _8FE0F;
+	u8 _8FE10;
+	u8 _8FE11;
+	u8 _8FE12;
+	u8 _8FE13;
+	u8 _8FE14;
+	u8 _8FE15;
+	u8 _8FE16;
+	u8 _8FE17;
+	float usedInPlayerPosDeltaManips_8FE18;
+	u8 _8FE1C;
+	u8 _8FE1D;
+	u8 _8FE1E;
+	u8 _8FE1F;
+	u8 _8FE20;
+	u8 _8FE21;
+	u8 _8FE22;
+	u8 _8FE23;
+	u8 _8FE24;
+	u8 _8FE25;
+	u8 _8FE26;
+	u8 _8FE27;
+	u8 _8FE28;
+	u8 _8FE29;
+	u8 _8FE2A;
+	u8 _8FE2B;
+	u8 _8FE2C;
+	u8 _8FE2D;
+	u8 _8FE2E;
+	u8 _8FE2F;
+	u8 _8FE30;
+	u8 _8FE31;
+	u8 _8FE32;
+	u8 _8FE33;
+	u8 _8FE34;
+	u8 _8FE35;
+	u8 _8FE36;
+	u8 _8FE37;
+	u8 _8FE38;
+	u8 _8FE39;
+	u8 _8FE3A;
+	u8 _8FE3B;
+	u8 _8FE3C;
+	u8 _8FE3D;
+	u8 _8FE3E;
+	u8 _8FE3F;
+	u8 _8FE40;
+	u8 _8FE41;
+	u8 _8FE42;
+	u8 _8FE43;
+	float usedInPlayerPosDeltaManips_8FE44;
+	float hasStuffAddedFor8_7_also_usedWithBoundingValues;
+	float usedInPlayerPosDeltaManips_8FE4C;
+	float usedInPlayerPosDeltaManips_8FE50;
+	float effectiveUpperBound;
+	float effectiveLowerBound;
+	float field_8FE5C;
+	float offsetForBoundings;
+	float zoneLeft;
+	float zoneRight;
+	float zoneTop;
+	float zoneBottom;
+	float field_8FE74;
+	float zoomedWidth;
+	float zoomedHeight;
+	float previousZoomedWidth;
+	float previousZoomedHeight;
+	float autoscroll_left;
+	float autoscroll_top;
+	float field_8FE90;
+	float field_8FE94;
+	float field_8FE98;
+	float deltaMultiplier;
+	float zoneWidthAfterManipulations;
+	float zoneHeight;
+	float previousScreenLeft;
+	float previousScreenTop;
+	float field_8FEB0;
+	float field_8FEB4;
+	float field_8FEB8;
+	float field_8FEBC;
+	float field_8FEC0;
+	float liquidHeightMaybe;
+	float field_8FEC8;
+	float wavyLavaHeights[80];
+	float zoomDivisor;
+	float field_90010;
+	float copyOfZoomDivisor_setAt801559D4;
+	float field_90018;
+	float cameraPanAmount;
+	u8 section12_id;
+	u8 isUsingSection12;
+	u8 field_90022;
+	u8 field_90023;
+	u8 isNotFollowingAnyPlayer;
+	u8 a_player_id;
+	u8 _90026;
+	u8 _90027;
+	float valueCalculatedBasedOnZoneAspectRatio;
+	u8 liquidTypeMaybe;
+	u8 _9002D;
+	u8 _9002E;
+	u8 _9002F;
+	float zoneLeft_copy1;
+	float zoneRight_copy1;
+	float zoneTop_copy1;
+	float zoneBottom_copy1;
+	float zoneLeft_copy2;
+	float zoneRight_copy2;
+	float zoneTop_copy2;
+	float zoneBottom_copy2;
+	float zoneLeft_copy3;
+	float zoneRight_copy3;
+	float zoneTop_copy3;
+	float zoneBottom_copy3;
+	float yOfInitialEntrance;
+	u32 field_90064;
+	float field_90068;
+	float field_9006C;
+	float field_90070;
+	float field_90074;
+	u8 field_90078;
+	u8 valueFromMbBias_1;
+	u8 valueFromMbBias_2;
+	u8 _9007B;
+	PTMF field_9007C;
+	float field_90088;
+	u32 field_9008C;
+	float field_90090;
+	u8 field_90094;
+	u8 _90095;
+	u8 _90096;
+	u8 _90097;
+	float zoomLevel;
+	float field_9009C;
+	float field_900A0;
+	float field_900A4;
+	float field_900A8;
+	BgGmAc autoscrollInfoMaybe[2];
+	u8 _900E4;
+	u8 _900E5;
+	u8 _900E6;
+	u8 _900E7;
+	u8 _900E8;
+	u8 _900E9;
+	u8 _900EA;
+	u8 _900EB;
+	u32 currentAutoscrollNode;
+	u32 usedByAutoscroll_900F0;
+	float usedByAutoscroll_900F4;
+	u16 autoscrollMovementAngleOne;
+	u16 autoscrollMovementAngleTwo;
+	u8 usedByAutoscroll_900FC;
+	u8 usedByAutoscroll_900FD;
+	u8 cameraScrollMode;
+	u8 cameraZoomMode;
+	u8 zoneField10;
+	u8 boundingID;
+	u8 mpBias;
+	u8 mpBiasCopy;
+	float field_90104;
+	float field_90108;
+	float field_9010C;
+	float relatedToObjCenter;
+	u8 manualZoomLevel;
+	u8 field_90115;
+	u8 field_90116;
+	u8 field_90117;
+	u8 field_90118;
+	u8 _90119;
+	u8 _9011A;
+	u8 _9011B;
+	float field_9011C;
+	float field_90120;
+	u8 field_90124;
+	u8 _90125;
+	u16 field_90126;
+	float field_90128;
+	float field_9012C;
+	float splashX[20];
+	float splashY[20];
+	u8 splashSettings[20];
+	u8 splashEnabled[20];
+	float wutX[200];
+	float wutY[200];
+	u8 wutActive[200];
+	u8 wutByte[200];
+	u16 correctMazesSoFar;
+	u8 field_909CA;
+	u8 setByEnZoomExecute;
+	u8 field_909CC;
+	u8 _909CD;
+	u8 _909CE;
+	u8 _909CF;
+	float field_909D0;
+	float field_909D4;
+	float x1_calc_from_entrance_c;
+	float x2_calc_from_entrance_c;
+	float y1_calc_from_entrance_c;
+	float y2_calc_from_entrance_c;
+	u32 field_909E8;
+	u32 field_909EC;
+	u32 field_909F0;
+	u32 field_909F4;
+	u8 _909F8;
+	u8 _909F9;
+	u8 _909FA;
+	u8 _909FB;
+	u8 _909FC;
+	u8 _909FD;
+	u8 _909FE;
+	u8 _909FF;
+	u8 _90A00;
+	u8 _90A01;
+	u8 _90A02;
+	u8 _90A03;
+	u8 _90A04;
+	u8 _90A05;
+	u8 _90A06;
+	u8 _90A07;
+	u8 _90A08;
+	u8 _90A09;
+	u8 _90A0A;
+	u8 _90A0B;
+	float x1_calc_from_entrance;
+	float x2_calc_from_entrance;
+	float y1_calc_from_entrance;
+	float y2_calc_from_entrance;
+	u32 field_90A1C;
+	u32 field_90A20;
+	u32 field_90A24;
+	u32 field_90A28;
+	u8 _90A2C;
+	u8 _90A2D;
+	u8 _90A2E;
+	u8 _90A2F;
+	u8 _90A30;
+	u8 _90A31;
+	u8 _90A32;
+	u8 _90A33;
+	u8 _90A34;
+	u8 _90A35;
+	u8 _90A36;
+	u8 _90A37;
+	u8 _90A38;
+	u8 _90A39;
+	u8 _90A3A;
+	u8 _90A3B;
+	u8 _90A3C;
+	u8 _90A3D;
+	u8 _90A3E;
+	u8 _90A3F;
+	u32 tileLayers[3];
+	u32 spotlightMask;
+	dBgTexMng_c bgTexMng;
+	u8 _90AA4;
+	u8 _90AA5;
+	u8 _90AA6;
+	u8 _90AA7;
+	u8 redSwitchFlag;
+
+
+	/*Actual things*/
 
 	u16 *getPointerToTile(int x, int y, int layer, int *pBlockNum = 0, bool unused = false);
 
@@ -2755,6 +3526,8 @@ public:
 	void placeTile(u16 x, u16 y, int layer, int tile);
 
 	void makeSplash(float x, float y, int type); // 80078410
+
+	void disableAutoscroll(); //8007A6B0	//SLLW
 };
 
 
@@ -2764,10 +3537,13 @@ public:
 	static dBgGm_c *instance;
 
 	TileRenderer::List *getTileRendererList(int index);
+	
+	void executeAutoscroll();
+	void autoscrollShit();
 };
 
 
-class dPlayerModelBase_c {
+/*class dPlayerModelBase_c {
 	// dunno what's public and what's private here
 	// don't really care
 public:
@@ -2862,7 +3638,7 @@ public:
 	virtual void _vfAC(bool blah);						// 800BD720
 
 	// I won't even bother with non-virtual functions....
-};
+};*/
 
 
 class dPlayerModel_c : public dPlayerModelBase_c {
@@ -2890,7 +3666,7 @@ class dPlayerModel_c : public dPlayerModelBase_c {
 };
 
 
-class dPlayerModelHandler_c {
+/*class dPlayerModelHandler_c {
 public:
 	dPlayerModelHandler_c(u8 player_id);	// 800D6DB0
 	virtual ~dPlayerModelHandler_c();		// 800D6EF0
@@ -2908,7 +3684,7 @@ private:
 	int hasMatrix;	// might be bool ?
 
 	void allocPlayerClass(u8 player_id);					// 800D6E00
-};
+};*/
 
 
 class mTexture_c {
@@ -3169,6 +3945,8 @@ namespace m2d {
 			// too lazy to list the methods for this atm
 			// after IDA reverted all the changes I made to the DB this
 			// afternoon ...
+
+			void updateAssociatedElements(); // 0x80164610
 	};
 
 	class EmbedLayoutBase_c : public Base_c {
@@ -3235,6 +4013,7 @@ namespace m2d {
 		void enableNonLoopAnim(int num, bool goToLastFrame = false);
 		void enableLoopAnim(int num);
 		void resetAnim(int num, bool goToLastFrame = false);
+		void resetAnim(int num, int whatToDo);
 		void disableAnim(int num);
 		void disableAllAnimations();
 
@@ -3337,7 +4116,8 @@ public:
 	// Size: 0x17C
 	
 	void PlaySoundAtPosition(int id, Vec2 *pos, u32 flags); // 80198D70
-	
+	void sub_801994D0(int soundId, u32 actorId, Vec2 *pos, u32 flags); // 801994D0
+
 	static SoundPlayingClass *instance1; // 8042A03C
 	static SoundPlayingClass *instance2; // 8042A03C
 	static SoundPlayingClass *instance3; // 8042A03C
@@ -3598,6 +4378,8 @@ namespace mHeap {
 };
 
 void WriteNumberToTextBox(int *number, const int *fieldLength, nw4r::lyt::TextBox *textBox, bool unk); // 800B3B60
+// a line from AsuTPC
+void WriteNumberToTextBox(u32 *number, u32 *fieldLength, nw4r::lyt::TextBox *textBox, bool unk); // 800B3B60
 void WriteNumberToTextBox(int *number, nw4r::lyt::TextBox *textBox, bool unk); // 800B3BE0
 
 namespace EGG {
@@ -3648,6 +4430,8 @@ class MessageClass {
 };
 
 dScript::Res_c *GetBMG(); // 800CDD50
+// a line from AsuTPC
+const wchar_t *GetBMGMessage(int category, int message);
 void WriteBMGToTextBox(nw4r::lyt::TextBox *textBox, dScript::Res_c *res, int category, int message, int argCount, ...); // 0x800C9B50
 
 // My version ignores the Font and Font Scale fields in BMG
@@ -3659,7 +4443,7 @@ void CheckForUSD1ShadowEntry(nw4r::lyt::TextBox *textBox); // 800C9BF0
 void WriteParsedStringToTextBox(nw4r::lyt::TextBox *textBox, const wchar_t *str, int vaCount, va_list *args, dScript::Res_c *res);
 
 
-extern "C" dAc_Py_c* GetSpecificPlayerActor(int number);
+extern "C" dAc_Py_c* GetSpecificPlayerActor(int playerID0to3);
 extern "C" dStageActor_c *CreateActor(u16 classID, int settings, Vec pos, char rot, char layer);
 extern "C" dStageActor_c *Actor_SearchByID(u32 actorID);
 
@@ -3874,6 +4658,7 @@ inline int Player_VF3D4(void *self) {
 
 extern "C" void PlaySoundWithFunctionB4(void *src, nw4r::snd::SoundHandle *handle, int id, int unk);
 extern "C" void CheckIfPlayingSound(void *src, int id);
+extern "C" void *MapSoundPlayer(void *SoundRelatedClass, int soundID, int unk);
 extern void *SoundRelatedClass;
 
 void GetPosForLayoutEffect(VEC3 *pos, bool quack);
@@ -4056,6 +4841,57 @@ class StageC4 {
 		u32 _10, _14;
 		u8 flags, _19, _1A, willDisplay, _1C, _1D;
 };
+
+// Sprite Data Utils (by RedStoneMatt, Synel & Nin0)
+inline int getNybbleValue(u32 settings, int fromNybble, int toNybble) {
+	int numberOfNybble = (toNybble - fromNybble) + 1;
+	int valueToUse = 48 - (4 * toNybble);
+	int fShit = pow(16, numberOfNybble) - 1;
+	return ((settings >> valueToUse) & fShit);
+}
+inline void getSpriteTexResName(char* buffer, int resID) {
+	sprintf(buffer, "g3d/t%02d.brres", resID);
+	buffer[strlen(buffer)] = 0;
+}
+inline void getSpriteTexResName255(char* buffer, int resID) {
+	sprintf(buffer, "g3d/t%03d.brres", resID);
+	buffer[strlen(buffer)] = 0;
+}
+
+// MoreSFX (by Asu-chan)
+inline void playSoundDistance(nw4r::snd::SoundHandle* handle, Vec3 pos, int id, float volume = 1.0, float pitch = 1.0, float distance = 500.0) {
+	ClassWithCameraInfo *cwci = ClassWithCameraInfo::instance;
+	if (cwci == 0) return;
+
+	Vec2 dist = {
+		cwci->screenCentreX - pos.x,
+		cwci->screenCentreY - pos.y
+	};
+	float v = max<float>(0.0, (1.0 - (sqrtf(dist.x * dist.x + dist.y * dist.y) / distance)) * 1.0);
+	if (v <= 0.0) v = 0.0;
+	else if (v > 1.0) v = 1.0;
+
+	PlaySoundWithFunctionB4(SoundRelatedClass, handle, id, 1);
+	handle->SetVolume(volume * v, 1);
+	if (pitch != 1.0) handle->SetPitch(pitch);
+}
+
+inline void setSoundDistance(nw4r::snd::SoundHandle* handle, Vec3 pos, float volume = 1.0, float pitch = 1.0, float distance = 500.0) {
+	if (!handle->Exists()) return;
+	ClassWithCameraInfo *cwci = ClassWithCameraInfo::instance;
+	if (cwci == 0) return;
+
+	Vec2 dist = {
+		cwci->screenCentreX - pos.x,
+		cwci->screenCentreY - pos.y
+	};
+	float v = max<float>(0.0, (1.0 - (sqrtf(dist.x * dist.x + dist.y * dist.y) / distance)) * 1.0);
+	if (v <= 0.0) v = 0.0;
+	else if (v > 1.0) v = 1.0;
+
+	handle->SetVolume(volume * v, 1);
+	if (pitch != 1.0) handle->SetPitch(pitch);
+}
 
 #endif
 

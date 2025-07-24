@@ -1,0 +1,10 @@
+---
+# By wakanameko
+
+source_files: [../src/lightBlockGiantHax.S, ../src/lightBlockGiantHax.cpp]
+hooks: 
+  - name: injectionToOnExecute
+    type: branch_insn
+    src_addr_pal: 0x807c07cc # addi r1, r1, 0x20
+    branch_type: bl
+    target_func: 'turnOFFtheLight'

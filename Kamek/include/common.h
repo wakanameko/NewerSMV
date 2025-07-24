@@ -46,6 +46,14 @@ typedef int BOOL;
 
 #define NULL 0
 
+#ifndef static_assert	// related NSLU Luigi physics?
+    // https://stackoverflow.com/a/1597129
+    #define TOKENPASTE(x, y) x ## y
+    #define TOKENPASTE2(x, y) TOKENPASTE(x, y)
+
+    #define static_assert(condition, ...) typedef int TOKENPASTE2(static_assert_, __LINE__)[(condition) ? 1 : -1]
+#endif // static_assert
+
 /* Structures */
 typedef struct { f32 x, y; } VEC2, Vec2;
 typedef struct { f32 x, y, z; } VEC3, Vec, Vec3;
@@ -84,13 +92,44 @@ struct tree_node {
 
 /* Common Functions */
 
+extern "C" {
+int wcslen(const wchar_t *str);
+wchar_t *wcscpy(wchar_t *dest, const wchar_t *src);
+wchar_t *wcsncpy(wchar_t *dest, const wchar_t *src, int num);
+int strlen(const char *str);
+char *strcpy(char *dest, const char *src);
+char *strncpy(char *dest, const char *src, int num);
+int strncmp(const char *str1, const char *str2, int num);
+
+float acos(float x);
+float atan(float x);
+float atan2(float y, float x);
+
+float cos(float x);
+float sin(float x);
+float tan(float x);
+float ceil(float x);
+float floor(float x);
+}
+
 void OSReport(const char *format, ...);
 int sprintf(char *buffer, const char *format, ...);
 int snprintf(char *buffer, size_t buff_size, const char *format, ...);
 char *strcat(char *destination, const char *source);
+void mbstowcs(wchar_t *destination, const char *source, size_t count); // from NSMBW-TPC by Asu
 extern "C" void *memcpy(void *dest, const void *src, size_t count);
 void *memset(void *ptr, int value, size_t num);
 int memcmp(const void *ptr1, const void *ptr2, size_t num);
+
+inline void moveEndOfWideChar(wchar_t *output, const wchar_t* input, u32 num) {
+	u32 len = wcslen(input) - num;
+	int i = 0;
+	for(i = 0; i < num; i++) {
+		output[i] = input[len];
+		len++;
+	}
+	output[i] = 0;
+}
 
 void *AllocFromGameHeap1(u32 size);
 void FreeFromGameHeap1(void *block);

@@ -91,6 +91,7 @@ int dWMMap_c::onCreate() {
 
 		launchStarMatrix.translation(launchStarX, launchStarY, 1000.0f);
 		S16Vec lsRot = {0x2000, s16(lsRotate ? 0x6200 : -0x5C00), 0};
+		//S16Vec lsRot = {0x2000, lsRotate ? 0x6200 : -0x5C00, 0};	// For the CodeWarrior compiler meybe
 		launchStarMatrix.applyRotationYXZ(&lsRot.x, &lsRot.y, &lsRot.z);
 	}
 
@@ -519,6 +520,9 @@ void dWMMap_c::renderPathLayer(dKPLayer_s *layer) {
 			node->extra->model.setDrawMatrix(node->extra->matrix);
 			node->extra->model.setScale(0.8f, 0.8f, 0.8f);
 			node->extra->model.calcWorld(false);
+
+			// Process CLR animation we put together in setupNodeExtra()
+			//node->extra->anmClr.process();
 
 			node->extra->model.scheduleForDrawing();
 		}

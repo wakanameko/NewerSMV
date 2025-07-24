@@ -641,7 +641,7 @@ void daFuzzyBear_c::executeState_RolyPoly() {
 			Vec efScale = {0.4f, 0.4f, 0.4f};
 			SpawnEffect("Wm_ob_icehitsmk", 0, &tempPos, &nullRot, &efScale);
 		}
-	 }
+	}
 
 	if (this->direction == 0) { // is even
 		this->pos.x = this->pos.x - 3.0; }

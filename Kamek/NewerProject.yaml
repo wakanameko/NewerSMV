@@ -56,7 +56,45 @@ modules:
   - processed/electricLine.yaml
   - processed/makeYourOwn.yaml
   - processed/challengeStar.yaml
-  - processed/singAlong.yaml
   - processed/pumpkinGoomba.yaml
   # - processed/pengi.yaml
 #  - processed/actorlog.yaml
+
+# ======= NewerSMV Stuff ======= #
+  - processed/player.yaml               # for some reason
+  - processed/profile.yaml              # more sprites stuff
+  - processed/bossSunMoon.yaml          # EN_LIFT_BURANKO - Big Mr.Sun/Moon
+#  - processed/muncher.yaml              # By Synel
+#  - processed/languageSelect.yaml      # AC_LIFT_BALANCE - CutScene of languageSelect
+#  - processed/smwTogezo.yaml            # By ReaZ0n (spriteID:486, ActorID:753)
+  - processed/koton.yaml                # New Sprite (487, 754)
+  - processed/goombrat.yaml             # By Synel (488, 755)
+  - processed/smw_DragonCoins.yaml      # By ReaZ0n (489, 756)
+#  - processed/dryBones.yaml             # By Synel (490, 757)
+  - processed/paraBones.yaml            # By Synel (491, 758)
+  - processed/bossMadPiano.yaml         # By wakanameko (492, 759)
+  - processed/ice_keronpa.yaml          # By Kazuki_4ys (extension of Keronpa)
+  - processed/catGoomba.yaml            # By wakanameko (494, 761)
+  - processed/airshipCannonHax.yaml     # By wakanameko (extension of sprite:299)
+  - processed/nsluLogoSign.yaml         # By wakanameko (495, 762)
+  - processed/pakkunProjectile.yaml     # By Synel, RedStoneMatt, Nin0 (496, 763)
+  - processed/pakkun.yaml               # By Synel, RedStoneMatt, Nin0
+  - processed/minigame_CollectStar.yaml # By wakanameko (497, 764)
+  - processed/messageWindow.yaml        # By wakanameko (499, 766)
+  - processed/signboard.yaml            # By Synel (Replace 310, 363)
+  - processed/smw_BossBigBoo.yaml       # By ReaZ0n (Replace 503, 770)
+  - processed/lightBlockGiantHax.yaml   # By wakanameko (extension of daLightBase_c)
+  - processed/smw_throws.yaml           # By ReaZ0n (extension)
+  - processed/torchiLightHax.yaml       # By wakanameko (extension of daTorchiLight_c)
+  - processed/ghostFogZOrder.yaml       # By wakanameko (extension of sprite:435)
+  - processed/minigame_singAlong.yaml   # By NewerTeam (edited by wakanameko)
+  - processed/spikeTrap.yaml            # By Synel (504, 771)
+  - processed/checkWater.yaml           # By Nin0
+#  - processed/konbu.yaml                # By Synel ((506, 773) (507,774))
+  - processed/bossChildSunMoon.yaml     # By wakanameko (508, 775)
+  - processed/bossRoomShutter.yaml      # By wakanameko
+  - processed/coinAngle.yaml            # By wakanameko
+# ======= NSMBW-TPC Stuff ======= #
+  - processed/soundtest.yaml            # WM_IBARA - Sound Test, based on cutScene.yaml/cpp/h
+  - processed/talkBalloon.yaml          # By Asu-chan (483, 750)
+  - processed/minigame_itemBowling.yaml # By Asu-chan ((500, 501, 502), (767, 768, 769))

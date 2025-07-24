@@ -753,7 +753,11 @@ enum Actors {
 	LETTER_WINDOW = 746,
 	DUMMY_ACTOR = 747,
 	LASTACTOR_STAGE = 748,
-	LASTACTOR = 749
+	LASTACTOR = 749,
+	SHELLWARPER = 769,
+    NEWER_ACTORSPAWNER = 772,
+    Konbu = 773,
+    BossChildSM = 775
 };
 
 struct Actor {

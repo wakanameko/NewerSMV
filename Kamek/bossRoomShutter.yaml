@@ -1,0 +1,8 @@
+---
+source_files: []
+hooks:
+    - name: PatchExtensionScall
+      type: patch
+      addr_pal: 0x807dc328
+      data: '38600000'  # new: li r3, 0 orig: 4bffee49 (bl FUN_807db170)
+

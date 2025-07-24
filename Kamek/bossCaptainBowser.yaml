@@ -4,7 +4,12 @@
 # KoopaThrow = WM_ANCHOR
 # FlameThrower = WM_ANTLION
 
-source_files: [../src/bossPlayerClown.cpp, ../src/bossPlayerClown.S, ../src/bossCaptainBowser.cpp, ../src/bossKoopaThrow.cpp, ../src/bossFlameThrower.cpp]
+source_files:
+  - ../src/bossPlayerClown.cpp
+  - ../src/bossPlayerClown.S
+  - ../src/bossCaptainBowser.cpp
+  - ../src/bossKoopaThrow.cpp
+  - ../src/bossFlameThrower.cpp
 
 hooks:
 
@@ -159,7 +164,40 @@ hooks:
     src_addr_pal: 0x80960298
     target_func: 'JrClownForPlayer_playAccelSound'
 
+  # wakanameko's overrides
+  - name: ClownCarCollisionCat1_Fireball_E_Explosion
+    type: add_func_pointer
+    src_addr_pal: 0x80960018
+    target_func: 'ClownCar__collisionCat1_Fireball_E_Explosion(dEn_c*, ActivePhysics*, ActivePhysics*)'
 
+  - name: ClownCarCollisionCat2_IceBall_15_YoshiIce_HookPatch2
+    type: add_func_pointer
+    src_addr_pal: 0x8096001C
+    target_func: 'ClownCar__collisionCat2_IceBall_15_YoshiIce_HookPatch2(dEn_c*, ActivePhysics*, ActivePhysics*)'
+
+  - name: ClownCarBitFieldCategory
+    type: patch
+    addr_pal: 0x8095fdf0  # 0b 0110 1111 (0x6F)
+    data: '0000002F'      # 0b 0010 1111
+
+#  - name: ClownCarPhysicsOverride
+#    type: branch_insn
+#    branch_type: bl
+#    src_addr_pal: 0x80810878  # li r8, 0x1 (set layer 1)
+#    target_func: 'ClownCarPhysicsOverride'
+
+  - name: ClownCarPhysicsOverride
+    type: branch_insn
+    branch_type: bl
+    src_addr_pal: 0x808103ac    # li r8, 0x1 (set layer 1)
+    target_func: 'ClownCarPhysicsOverride'
+
+# Make BROS_ICEBALL do not freeze anything
+  - name: BrosIceballDontFreeze
+    type: branch_insn
+    branch_type: bl
+    src_addr_pal: 0x807d5218    # lwz r12, 0x60(r30)
+    target_func: 'BrosIceballDontFreeze'
 
 
   # Clown Shot - Replaces WM_PAKKUN
@@ -182,4 +220,17 @@ hooks:
     type: add_func_pointer
     src_addr_pal: 0x80937FA8
     target_func: 'KazanRock_CollisionCallback'
+
+# Spawn clown for died players
+  - name: spawnClownAtPlayerLeg
+    type: branch_insn
+    branch_type: bl
+    src_addr_pal: 0x801122a8    # cmpwi r0, 0x0
+    target_func: 'spawnClownAtPlayerLeg'
+
+#  - name: doFallDroneClownCar
+#    type: branch_insn
+#    branch_type: bl
+#    src_addr_pal: 0x80810b4c    # mr r3, r28
+#    target_func: 'doFallDroneClownCar'
 

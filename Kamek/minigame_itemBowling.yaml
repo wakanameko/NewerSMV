@@ -1,0 +1,78 @@
+---
+# By Asu-chan
+# All sprites are handled as a new sprite.
+
+source_files: 
+  - ../src/minigame_itemBowlingMgr.cpp
+  - ../src/minigame_itemBalloon.cpp
+  - ../src/minigame_itemBowlingShellWarper.cpp
+  - ../src/minigame_itemBowlingShellFix.S
+  - ../src/minigame_itemBowlingShellFix.cpp
+
+hooks:
+  # Bouncing stuff
+  - name: BounceShell
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x8003B9B0
+    target_func: 'BounceShell'
+
+  - name: SpringboardShell
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x80038920
+    target_func: 'SpringboardShell'
+
+  - name: BounceGoomba
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x800320A8
+    target_func: 'BounceGoomba'
+
+  - name: ExpandCloudPlatformSize
+    type: patch
+    addr_pal: 0x80A5C6D8
+    data: '3860054C' # Orig: 38600548
+
+  - name: DoCloudBounceAnim
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x80A5CA84
+    target_func: 'DoCloudBounceAnim'
+
+  # Item Bowling
+  # - name: NoPlayerGP
+  #   type: branch_insn
+  #   branch_type: b
+  #   src_addr_pal: 0x80126850
+  #   target_func: 'NoPlayerGP'
+
+  - name: NoPlayerFire
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x8011B064
+    target_func: 'NoPlayerFire'
+
+  - name: NoPlayerIce
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x80124704
+    target_func: 'NoPlayerIce'
+
+  - name: NoPlayerSpin
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x801472E4
+    target_func: 'NoPlayerSpin'
+
+  - name: NoPlayerSlide
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x8012D674
+    target_func: 'NoPlayerSlide'
+
+  - name: GPSlide
+    type: branch_insn
+    branch_type: b
+    src_addr_pal: 0x80039BF0
+    target_func: 'GPSlide'

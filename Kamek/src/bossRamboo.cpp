@@ -480,7 +480,6 @@ void daRamboo_c::endState_Flee() {
 
 
 void daRamboo_c::beginState_Outro() {
-
 	bindAnimChr_and_setUpdateRates("DEATH", anmB, hideModel, 1.0f);
 	Hiding = true;
 

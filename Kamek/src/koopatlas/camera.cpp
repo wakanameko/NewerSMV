@@ -1,5 +1,6 @@
 #include "koopatlas/camera.h"
 #include "koopatlas/player.h"
+#include "koopatlas/hud.h"
 
 dWorldCamera_c *dWorldCamera_c::instance = 0;
 
@@ -68,40 +69,94 @@ int dWorldCamera_c::onDelete() {
 
 
 int dWorldCamera_c::onExecute() {
-	if (dScKoopatlas_c::instance->warpZoneHacks) {
-		currentX = 2040.0f;
-		currentY = -1460.0f;
-		zoomLevel = 3.4f;
-
-	} else if (panning) {
-		// Calculate where we are
-#define SMOOTHSTEP(x) ((x) * (x) * (3 - 2 * (x)))
-		float stepRatio = panCurrentStep / panTotalSteps;
-		stepRatio = 1.0f - SMOOTHSTEP(stepRatio);
-		//OSReport("PAN: Step %f / %f ---- Ratio: %f", panCurrentStep, panTotalSteps, stepRatio);
-		//OSReport("From %f, %f to %f, %f --- Zoom: %f to %f\n", panFromX, panFromY, panToX, panToY, panFromZoom, panToZoom);
-
-		currentX = (panFromX * stepRatio) + (panToX * (1.0f - stepRatio));
-		currentY = (panFromY * stepRatio) + (panToY * (1.0f - stepRatio));
-		zoomLevel = (panFromZoom * stepRatio) + (panToZoom * (1.0f - stepRatio));
-		//OSReport("Calculated: %f, %f with zoom %f\n", currentX, currentY, zoomLevel);
-
-		panCurrentStep += 1.0f;
-
-		if (panCurrentStep > panTotalSteps) {
-			// YAY, we reached the end
-			panning = false;
-			currentX = panToX;
-			currentY = panToY;
-			zoomLevel = panToZoom;
+	if (dScKoopatlas_c::instance->WMViewerVisible)
+	{
+		// 2460.000000, -2376.000000
+		int heldButtons = Remocon_GetButtons(GetActiveRemocon());
+		bool wasSoundPlayed = false;
+		if (heldButtons & WPAD_LEFT) //left
+		{
+			if (currentX > dScKoopatlas_c::instance->WMBorder.xLeft[dScKoopatlas_c::instance->currentMapID]) {	
+				currentX -= 7.0f;
+				dScKoopatlas_c::instance->sfxShouldPlay = true;
+				wasSoundPlayed = true;
+			}
+			else
+				dScKoopatlas_c::instance->sfxShouldPlay = false;
 		}
-
-	} else if (followPlayer) {
-		daWMPlayer_c *player = daWMPlayer_c::instance;
-		currentX = player->pos.x;
-		currentY = player->pos.y;
+		else if (heldButtons & WPAD_RIGHT) //right
+		{
+			if (currentX < dScKoopatlas_c::instance->WMBorder.xRight[dScKoopatlas_c::instance->currentMapID]) {
+				currentX += 7.0f;
+				dScKoopatlas_c::instance->sfxShouldPlay = true;
+				wasSoundPlayed = true;
+			}
+			else
+				dScKoopatlas_c::instance->sfxShouldPlay = false;
+		}
+		if (heldButtons & WPAD_DOWN) //down
+		{
+			if (currentY > dScKoopatlas_c::instance->WMBorder.yBottom[dScKoopatlas_c::instance->currentMapID]) {
+				currentY -= 7.0f;
+				dScKoopatlas_c::instance->sfxShouldPlay = true;
+				wasSoundPlayed = true;
+			}
+			else
+				dScKoopatlas_c::instance->sfxShouldPlay = false;
+		}
+		else if (heldButtons & WPAD_UP) //up
+		{
+			if (currentY < dScKoopatlas_c::instance->WMBorder.yTop[dScKoopatlas_c::instance->currentMapID]) {
+				currentY += 7.0f;
+				dScKoopatlas_c::instance->sfxShouldPlay = true;
+				wasSoundPlayed = true;
+			}
+			else
+				dScKoopatlas_c::instance->sfxShouldPlay = false;
+		}
+		if (!wasSoundPlayed)
+		{
+			dScKoopatlas_c::instance->sfxShouldPlay = false;
+		}
 	}
+	else
+	{
 
+		if (dScKoopatlas_c::instance->warpZoneHacks) {
+			currentX = 2040.0f;
+			currentY = -1460.0f;
+			zoomLevel = 3.4f;
+
+		} else if (panning) {
+			// Calculate where we are
+	#define SMOOTHSTEP(x) ((x) * (x) * (3 - 2 * (x)))
+			float stepRatio = panCurrentStep / panTotalSteps;
+			stepRatio = 1.0f - SMOOTHSTEP(stepRatio);
+			//OSReport("PAN: Step %f / %f ---- Ratio: %f", panCurrentStep, panTotalSteps, stepRatio);
+			//OSReport("From %f, %f to %f, %f --- Zoom: %f to %f\n", panFromX, panFromY, panToX, panToY, panFromZoom, panToZoom);
+
+			currentX = (panFromX * stepRatio) + (panToX * (1.0f - stepRatio));
+			currentY = (panFromY * stepRatio) + (panToY * (1.0f - stepRatio));
+			zoomLevel = (panFromZoom * stepRatio) + (panToZoom * (1.0f - stepRatio));
+			//OSReport("Calculated: %f, %f with zoom %f\n", currentX, currentY, zoomLevel);
+
+			panCurrentStep += 1.0f;
+
+			if (panCurrentStep > panTotalSteps) {
+				// YAY, we reached the end
+				panning = false;
+				currentX = panToX;
+				currentY = panToY;
+				zoomLevel = panToZoom;
+			}
+
+		} else if (followPlayer) {
+			daWMPlayer_c *player = daWMPlayer_c::instance;
+			currentX = player->pos.x;
+			currentY = player->pos.y;
+		}
+	}
+	
 	calculateScreenGeometry();
 	doStuff(10000.0);
 	generateCameraMatrices();
@@ -167,7 +222,7 @@ void dWorldCamera_c::panToBounds(float left, float top, float right, float botto
 }
 
 
-void dWorldCamera_c::panToPosition(float x, float y, float zoom) {
+void dWorldCamera_c::panToPosition(float x, float y, float zoom, bool MapViewReturn) {
 	panFromX = currentX;
 	panFromY = currentY;
 	panFromZoom = zoomLevel;
@@ -180,7 +235,12 @@ void dWorldCamera_c::panToPosition(float x, float y, float zoom) {
 	float yDiff = abs(panToY - panFromY);
 
 	float panLength = sqrtf((xDiff*xDiff) + (yDiff*yDiff));
-	float panSteps = panLength / 2.3f;
+
+	float panSteps;
+	if (MapViewReturn)
+		panSteps = panLength / 100.0f;
+	else
+		panSteps = panLength / 2.3f;
 	float scaleSteps = abs(panToZoom - panFromZoom) / 0.1f;
 	float stepCount = max(panSteps, scaleSteps);
 
@@ -192,7 +252,8 @@ void dWorldCamera_c::panToPosition(float x, float y, float zoom) {
 	panTotalSteps = stepCount;
 
 	panning = true;
-	followPlayer = false;
+	if (!MapViewReturn)
+		followPlayer = false;
 }
 
 

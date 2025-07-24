@@ -3,6 +3,7 @@
 #include <g3dhax.h>
 #include <sfx.h>
 #include "boss.h"
+#include <wakanalib.h>
 
 // #define cField(TYPE, OFFSET) (*(TYPE*)(((u32)clown) + (OFFSET)))
 // #define cPlayerOccupying cField(dStageActor_c*, 0x738)
@@ -191,9 +192,24 @@ extern "C" void JrClownForPlayer_playAccelSound() {
 	PlaySoundWithFunctionB4(SoundRelatedClass, &handle, SE_PLY_CROWN_ACC, 1);
 }
 
-
-
-
+///////////////
+// wakanameko's overrides
+// ActivePhysics
+bool ClownCar__collisionCat1_Fireball_E_Explosion(dEn_c *self, ActivePhysics *apThis, ActivePhysics *apOther){
+	OSReport("YEAH I HOOKED!!\n");
+    self->fireballInvalid(apThis, apOther);
+    return false;
+}
+bool ClownCar__collisionCat2_IceBall_15_YoshiIce_HookPatch2(dEn_c *self, ActivePhysics *apThis, ActivePhysics *apOther){
+	OSReport("YEAH I HOOKED!!\n");
+    self->iceballInvalid(apThis, apOther);
+    return false;
+}
+// Iceball Player Collision Hax
+void spawnIceEffectAndDelete(dEn_c *self, dEn_c *player){
+	OSReport("");	// If delete this line, the game will crash. Why?
+	daBrosIceball__executeState_Move_deleteRequest(self);	// 0x807d5644	// old: 0x807d563c
+}
 
 
 
@@ -238,8 +254,8 @@ int daClownShot::onCreate() {
 
 	GreatBalls.category1 = 0x3;
 	GreatBalls.category2 = 0x0;
-	GreatBalls.bitfield1 = 0x6F;
-	GreatBalls.bitfield2 = 0xffbafffe;
+	GreatBalls.bitfield1 = 0b01101111;	// 右から, 1マリオ通常, 2マリオ攻撃, 3unk1, 4sprites(), 5balloon, 6コインとか, 7ファイアとアイス, 8unk0
+	GreatBalls.bitfield2 = 0b11111111100000000011000001010000;
 	GreatBalls.unkShort1C = 0;
 	GreatBalls.callback = &dEn_c::collisionCallback;
 

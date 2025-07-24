@@ -1,3 +1,4 @@
+#include <gameLanguage.h>
 #include "koopatlas/core.h"
 #include "koopatlas/camera.h"
 #include "koopatlas/player.h"
@@ -5,6 +6,7 @@
 
 extern "C" void LoadMapScene();
 extern u8 MaybeFinishingLevel[2];
+extern bool enableDebugMode;
 
 dScKoopatlas_c *dScKoopatlas_c::instance = 0;
 
@@ -22,6 +24,7 @@ CREATE_STATE_E(dScKoopatlas_c, EasyPairingWait);
 CREATE_STATE_E(dScKoopatlas_c, PowerupsWait);
 CREATE_STATE_E(dScKoopatlas_c, ShopWait);
 CREATE_STATE_E(dScKoopatlas_c, CoinsWait);
+CREATE_STATE_E(dScKoopatlas_c, WMViewerWait);
 CREATE_STATE_E(dScKoopatlas_c, SaveOpen);
 CREATE_STATE_E(dScKoopatlas_c, SaveSelect);
 CREATE_STATE_E(dScKoopatlas_c, SaveWindowClose);
@@ -184,7 +187,7 @@ bool WMInit_LoadResources2(void *ptr) {
 		OSReport("Load map: %s\n", wm->mapPath);
 	}
 
-	if (wm->mapData.load(wm->mapPath)) {
+	if (wm->mapData.load(wm->mapPath) && wm->borderData.load("NewerRes/MapBorders.bin")) {
 		return true;
 	} else
 		return false;
@@ -240,7 +243,7 @@ bool WMInit_SetupExtra(void *ptr) {
 	// need Player before we can set up paths
 	SpammyReport("creating player\n");
 	wm->player = (daWMPlayer_c*)CreateParentedObject(WM_PLAYER, wm, 0, 2);
-	wm->player->modelHandler->mdlClass->setPowerup(Player_Powerup[0]);
+	wm->player->modelHandler->mdlClass->setPowerup(Player_Powerup[Player_ID[0]]);
 	wm->player->bindPats();
 	wm->player->modelHandler->mdlClass->startAnimation(0, 1.2f, 10.0f, 0.0f);
 
@@ -335,6 +338,11 @@ int dScKoopatlas_c::onCreate() {
 
 	SpammyReport("onCreate() called\n");
 
+	SpammyReport("Freeing effects\n"); // Opening cutscene loads vs effects for some reason and fragments RAM too much for some maps
+	FreeEffects(0);
+	FreeBreff(0);
+	FreeBreft(0);
+
 	SpammyReport("LoadMapScene()\n");
 	LoadMapScene();
 
@@ -424,6 +432,12 @@ int dScKoopatlas_c::onCreate() {
 
 	somethingAboutSound(_8042A788);
 
+	sfxIsPlaying = false;
+	sfxShouldPlay = false;
+	WMViewerVisible = false;
+
+	coordinatesSet = false;
+
 	return true;
 }
 
@@ -484,6 +498,7 @@ int dScKoopatlas_c::onExecute() {
 	//SpammyReport("Executing state: %s\n", state.getCurrentState()->getName());
 	state.execute();
 
+
 	return true;
 }
 
@@ -519,7 +534,36 @@ void dScKoopatlas_c::endState_ContinueWait() {
 
 
 void dScKoopatlas_c::executeState_Normal() {
-	// ghb
+
+	if (!coordinatesSet)
+	{
+		SaveBlock *save = GetSaveFile()->GetBlock(-1);
+		int size = 0;
+		size = borderData.data->numOfWorlds;
+		float* left = new float[size];
+		float* right = new float[size];
+		float* top = new float[size];
+		float* bottom = new float[size];
+		for (int i = 0; i < borderData.data->numOfWorlds; i++)
+		{
+			left[i] = borderData.data->world[i].xLeft;
+			right[i] = borderData.data->world[i].xRight;
+			top[i] = -borderData.data->world[i].yTop;
+			bottom[i] = -borderData.data->world[i].yBottom;
+		}
+		WMBorder.xLeft = left;
+		WMBorder.xRight = right;
+		WMBorder.yTop = top;
+		WMBorder.yBottom = bottom;
+
+		delete[] left;
+		delete[] right;
+		delete[] top;
+		delete[] bottom;
+
+		coordinatesSet = true;
+	}
+
 	if (pathManager.completionMessagePending) {
 		OSReport("Going to set CompletionMsg\n");
 		state.setState(&StateID_CompletionMsg);
@@ -529,14 +573,21 @@ void dScKoopatlas_c::executeState_Normal() {
 	if (pathManager.doingThings())
 		return;
 
+	if (scrollHandle.Exists()) {
+		scrollHandle.Stop(0);
+		sfxIsPlaying = false;
+	}
+
 	int nowPressed = Remocon_GetPressed(GetActiveRemocon());
+	int nowHeld = Remocon_GetButtons(GetActiveRemocon());
 
 	// Nothing related to the menu is going on
 	if (nowPressed & WPAD_ONE) {
 		stockItem->show = true;
 		state.setState(&StateID_PowerupsWait);
 		hud->hideAll();
-	} else if (nowPressed & WPAD_PLUS) {
+	} 
+	else if (nowPressed & WPAD_PLUS) {
 		CSMENU_ACTIVE(this->csMenu) = true;
 		state.setState(&StateID_CSMenu);
 		hud->hideAll();
@@ -550,7 +601,41 @@ void dScKoopatlas_c::executeState_Normal() {
 	// 		for (int l = 0; l < 6; l++)
 	// 			save->SetLevelCondition(w, l, COND_COIN_ALL);
 #endif
-	} 
+	}
+	else if (nowPressed & WPAD_A) {
+		WMViewerVisible = true;
+		hud->hideAll();
+		MapSoundPlayer(SoundRelatedClass, SE_SYS_MAP_VIEW_MODE, 1);
+		state.setState(&StateID_WMViewerWait);
+	}
+	else if (nowPressed & WPAD_B){
+		OSReport("Pos X/Y Mario: %02f, %02f\n", player->pos.x, player->pos.y);
+	}
+	else if (nowHeld & WPAD_B && nowPressed & WPAD_UP){
+		DoSceneChange(WM_IBARA, 0, 0); //enter the Asu's sound test room. but this function is broken
+	}
+	else if (nowHeld & WPAD_B && nowPressed & WPAD_DOWN){
+		if (enableDebugMode){
+			DoSceneChange(WORLD_9_DEMO, 0, 0);
+		}
+	}
+	else if (nowHeld & WPAD_B && nowPressed & WPAD_LEFT){
+		if (enableDebugMode){
+			pathManager.completionMessagePending = true;
+			pathManager.completionMessageType = CMP_MSG_COINS;
+			pathManager.completionMessageType = CMP_MSG_EXITS;
+			pathManager.completionMessageType = CMP_MSG_WORLD;
+			pathManager.completionMessageType = CMP_MSG_GLOBAL_COINS_EXC_W9;
+			pathManager.completionMessageType = CMP_MSG_GLOBAL_COINS;
+			pathManager.completionMessageType = CMP_MSG_GLOBAL_EXITS;
+			pathManager.completionMessageType = CMP_MSG_EVERYTHING;
+		}
+	}
+	else if (nowHeld & WPAD_B && nowPressed & WPAD_RIGHT){
+		if (enableDebugMode){
+			DoSceneChange(AC_LIFT_BALANCE, 0, 0);
+		}
+	}
 }
 
 void dScKoopatlas_c::executeState_CSMenu() {
@@ -573,6 +658,7 @@ void dScKoopatlas_c::executeState_CSMenu() {
 				case 1:
 					// Add/Drop Players
 					MapReport("Add/Drop Players was pressed\n");
+					player->visible = false;
 					state.setState(&StateID_PlayerChangeWait);
 					NPCHG_ACTIVE(this->numPeopleChange) = true;
 					WpadShit(10);
@@ -709,6 +795,9 @@ void dScKoopatlas_c::executeState_PlayerChangeWait() {
 				if (!isThere) Player_Flags[i] = 0;
 			}
 
+			player->visible = true;
+			player->refreshPlayerModel();
+
 			state.setState(&StateID_Normal);
 			hud->unhideAll();
 		}
@@ -744,7 +833,7 @@ void dScKoopatlas_c::executeState_EasyPairingWait() {
 void dScKoopatlas_c::executeState_PowerupsWait() {
 
 	if (!stockItem->show) {
-		player->modelHandler->mdlClass->setPowerup(Player_Powerup[0]);
+		player->modelHandler->mdlClass->setPowerup(Player_Powerup[Player_ID[0]]);
 		player->bindPats();
 
 		state.setState(&StateID_Normal);
@@ -773,6 +862,45 @@ void dScKoopatlas_c::executeState_CoinsWait() {
 	if (!coins->visible) {
 		state.setState(&StateID_Normal);
 		hud->unhideAll();
+	}
+
+}
+
+
+void dScKoopatlas_c::executeState_WMViewerWait() {
+
+	int nowPressed = Remocon_GetPressed(GetActiveRemocon());
+
+	if (nowPressed & WPAD_A) {
+		if (sfxIsPlaying || scrollHandle.Exists()) {
+			scrollHandle.Stop(0);
+			sfxIsPlaying = false;
+		}
+
+		dWorldCamera_c::instance->panToPosition(player->pos.x, player->pos.y, 2.8f, true);
+
+		WMViewerVisible = false;
+
+		MapSoundPlayer(SoundRelatedClass, SE_SYS_MAP_VIEW_QUIT, 1);
+		state.setState(&StateID_Normal);
+		hud->unhideAll();
+	}
+
+	if (sfxShouldPlay)
+	{
+		if (!sfxIsPlaying)
+		{
+			PlaySoundWithFunctionB4(SoundRelatedClass, &scrollHandle, SE_SYS_MAP_VIEW_MOVING, 1);
+			sfxIsPlaying = true;
+		}
+	}
+	else
+	{
+		if (sfxIsPlaying)
+		{
+			scrollHandle.Stop(0);
+			sfxIsPlaying = false;
+		}
 	}
 
 }
@@ -1067,6 +1195,76 @@ static u32 _cb_searchName(u32 userData, const char *str, int size, int index) {
 		return 0;
 }
 
+
+
+/* ------ Added by Kazuki_4ys ------ */
+static void my_memset(void *mem, int ch, int length){
+	for(int i = 0;i < length;i++)*((unsigned char*)mem + i) = (unsigned char)ch;
+}
+
+static char *utf16ToUtf8(const wchar_t *src){
+	//UTF-16文字列をUTF-8に変換し動的に確保したメモリに書き込んでそのメモリへのポインタを返す
+	int srcLen = wcslen(src);
+	unsigned char *dest = (unsigned char*)EGG__Heap__alloc(srcLen * 3 + 1, 0x20, GetArchiveHeap());//dest用にメモリを確保
+	//wcahr_t1つ分で表される文字はUTF-8で最大3バイトになる
+	my_memset(dest, 0, srcLen * 3 + 1);
+	int curIdx = 0;
+	wchar_t curCh;
+	for(int i = 0;i < srcLen;i++){//一文字づずUTF-8からUTF-16への変換実行
+		curCh = *(src + i);
+		if(curCh == 0)break;
+		if(curCh < 128){
+			dest[curIdx] = (char)curCh;
+            curIdx++;
+		}else if(curCh < 2048){
+			dest[curIdx] = (char)((curCh >> 6) + 0xc0);
+            curIdx++;
+			dest[curIdx] = (char)((curCh & 0x3f) + 0x80);
+			curIdx++;
+		}else{
+			dest[curIdx] = (char)((curCh >> 12) + 0xe0);
+			curIdx++;
+			dest[curIdx] = (char)(((curCh >> 6) & 0x3f) + 0x80);
+			curIdx++;
+			dest[curIdx] = (char)((curCh & 0x3f) + 0x80);
+			curIdx++;
+		}
+	}
+	return (char*)dest;
+}
+
+static wchar_t *utf8ToUtf16(const char *_src){
+	//UTF-8文字列をUTF-16に変換し動的に確保したメモリに書き込んでそのメモリへのポインタを返す
+    unsigned int destIndex = 0;
+    unsigned int curCharIndex = 0;
+    unsigned char *src = (unsigned char*)_src;
+    unsigned int length = strlen(_src);
+    wchar_t *dest = (wchar_t*)EGG__Heap__alloc((length + 1) * sizeof(wchar_t), 0x20, GetArchiveHeap());//dest用にメモリを確保
+	my_memset(dest, 0, (length + 1) * sizeof(wchar_t));
+    while(curCharIndex < length){
+        dest[destIndex] = 0;
+        if((*(src + curCharIndex) & 0b11110000) == 0b11100000){//2048 ~ 65535
+            dest[destIndex] |= ((*(src + curCharIndex + 0) & 0xF) << 12);
+            dest[destIndex] |= ((*(src + curCharIndex + 1) & 0x3F) << 6);
+            dest[destIndex] |= (*(src + curCharIndex + 2) & 0x3F);
+            curCharIndex += 3;
+        }else if((*(src + curCharIndex) & 0b11100000) == 0b11000000){//128 ~ 2047
+            dest[destIndex] |= ((*(src + curCharIndex + 0) & 0x1F) << 6);
+            dest[destIndex] |= (*(src + curCharIndex + 1) & 0x3F);
+            curCharIndex += 2;
+        }else{
+            dest[destIndex] = *(src + curCharIndex);
+            curCharIndex++;
+        }
+        destIndex++;
+    }
+    dest[destIndex] = 0;
+    return dest;
+}
+/* ------ Added by Kazuki_4ys ------ */
+
+
+
 const char *dScKoopatlas_c::getMapNameForIndex(int index) {
 	return (const char *)iterateMapList(&_cb_getIndex, (u32)index, 0);
 }
@@ -1083,16 +1281,54 @@ void dScKoopatlas_c::showSaveWindow() {
 	yesNoWindow->visible = true;
 }
 
-static const wchar_t *completionMsgs[] = {
+// EN messages by NewerTeam and wakanameko
+static const wchar_t *completionMsgsEN[] = {
 	L"The most erudite of Buttocks",
-	L"You've collected all of\nthe \x0B\x014F\xBEEF Star Coins in\n",
-	L"You have gotten every \x0B\x013B\xBEEF exit\nin",
-	L"You have gotten everything\nin",
-	L"You have collected all the\nnecessary \x0B\x014F\xBEEF coins to enter\nthe Special World!",
+	L"You've collected all of\nthe \x0B\x014F\xBEEF Star Coins in\n%s",
+	L"You have gotten every \x0B\x013B\xBEEF exit\nin %s",
+	L"You have gotten everything\nin %s",
+	L"You have collected all the\nnecessary \x0B\x014F\xBEEF coins to enter\nthe Special World!", // unused
 	L"You have collected all the \x0B\x014F\xBEEF Star\nCoins in the game!",
 	L"You've found every \x0B\x013B\xBEEF exit in the\ngame!",
-	L"You've completed everything in\nNEWER SUPER MARIO BROS. Wii!\n\nWe present you a new quest.\nTry pressing \x0B\x0122\xBEEF, \x0B\x0123\xBEEF and \x0B\x0125\xBEEF\n on the Star Coin menu."
+	L"You've completed everything in\nNewerSunMoonVacation.Wii!\n\nWe present you a new quest.\nTry pressing \x0B\x0122\xBEEF, \x0B\x0123\xBEEF and \x0B\x0125\xBEEF\n on the Star Coin menu."
 };
+
+//JP translate texts by wakanameko, ReaZ0n, and 南無さん (from SLLW)
+static const wchar_t *completionMsgsJP[] = {
+	L"",
+	L"%s で\nすべての\x0B\x014F\xBEEFスターコインを\nかくとくしました!",
+	L"%s で\nすべての\x0B\x013B\xBEEFゴールを\nはっけんしました!",
+	L"%s の\nすべてのコースを\nコンプリートしました!",
+	L"あつめたスターコイン\x0B\x014F\xBEEFの\nちからで、スペシャルワールドが\nかいほうされました!",
+	L"NewerSunMoonVacation.Wiiで\nすべての\x0B\x014F\xBEEFスターコインを\nかくとくしました!",
+	L"NewerSunMoonVacation.Wiiで\nすべての\x0B\x013B\xBEEFゴールをコンプリートしました!",
+	L"NewerSunMoonVacation.Wiiを、\nすべてコンプリートしました!!\n\nここまであそんでくれてありがとう!\nスターコイン画面で「\x0B\x0122\xBEEF」と「\x0B\x0123\xBEEF」と「\x0B\x0125\xBEEF」\nをどうじに押してみてください。\n何かおこるかも？"
+};
+
+// DE messages by Vadenimo
+static const wchar_t *completionMsgsDE[] = {
+	L"Der Gelehrtste aller Hintern ( ͡° ͜ʖ ͡°) || Ein neues 2D-Mario-Spiel muss her, Nintendo!",
+	L"Du hast alle der\nder erzielbaren \x0B\x014F\xBEEF Sternenmünzen in\n%s\n gesammelt!",
+	L"Du hast jedes \x0B\x013B\xBEEF Level in \n%s\n beendet!",
+	L"Du hast alles \nin %s\ngefunden!",
+	L"Du hast all die \nbenötigten \x0B\x014F\xBEEF Sternenmünzen gefunden, um die spezialle Welt zu erreichen!",
+	L"Du hast alle \x0B\x014F\xBEEF Sternen\nmünzen im Spiel gefunden!",
+	L"Du hast jeden \x0B\x013B\xBEEF Levelausgang im \nSpiel gefunden!",
+	L"Du hast alles in NewerSunMoonVacation.Wii gefunden! Wir präsentieren dir eine neue Quest. \nDrücke \x0B\x0122\xBEEF, \x0B\x0123\xBEEF und \x0B\x0125\xBEEF\n auf dem Sternenmünzen-Menü."
+};
+
+// IT messages by Jacopo Plays
+static const wchar_t *completionMsgsIT[] = {
+	L"Ciao, non so che scrivere",
+	L"Hai collezionato tutte le \nthe \x0B\x014F\xBEEF Monete Stella in\n%s",
+	L"Hai ottenuto ogni uscita \x0B\x013B\xBEEF\ \nin %s",
+	L"Hai collezionato tutto in\n%s",
+	L"Hai collezionato tutte le monete stella\necessarie \x0B\x014F\xBEEF per entrare nel Mondo Speciale!",
+	L"Hai collezionate tutte le \x0B\x014F\xBEEF monete\nStella nel gioco!",
+	L"Hai trovato ogni \x0B\x013B\xBEEF uscita nel\ngioco!",
+	L"Hai compleato tutti in \nNewerSunMoonVacation.Wii!\n\nTi presentiamo una nuova sfida.\nProva a premere \x0B\x0122\xBEEF, \x0B\x0123\xBEEF e \x0B\x0125\xBEEF nel menù della Monete Stella."
+};
+
 
 void dScKoopatlas_c::beginState_CompletionMsg() {
 	if (pathManager.completionMessageType == 0)
@@ -1128,38 +1364,63 @@ void dScKoopatlas_c::executeState_CompletionMsg() {
 
 		int type = pathManager.completionMessageType;
 
-		const wchar_t *baseText = completionMsgs[type];
+		const wchar_t *baseText;	//inspired by SLLW
 
-		// Used when we assemble a dynamic message
-		wchar_t text[512];
+		if(SetGameLanguage == 0) {
+			baseText = completionMsgsEN[type];
+		}
+		if(SetGameLanguage == 1) {
+			baseText = completionMsgsJP[type];
+		}
+		if(SetGameLanguage == 2) {
+			baseText = completionMsgsDE[type];
+		}
+		if(SetGameLanguage == 3) {
+			baseText = completionMsgsIT[type];
+		}
+
+		wchar_t text[128];
+		char *tmpUtf8Message[2];
+		char sprintfDestBuffer[512];
+		//wchar_t *baseText;
+
 
 		if (type >= CMP_MSG_COINS && type <= CMP_MSG_WORLD) {
 			// title
 			int w = pathManager.completionMessageWorldNum;
 			int l = ((w == 5) || (w == 7)) ? 101 : 100;
 			dLevelInfo_c::entry_s *titleEntry = dLevelInfo_c::s_info.searchByDisplayNum(w, l);
-			const char *title = dLevelInfo_c::s_info.getNameForLevel(titleEntry);
+			// edited by wakanameko base txt is here: const char *title = dLevelInfo_c::s_info.getNameForLevel(titleEntry);
+			const wchar_t *title = dLevelInfo_c::s_info.getNameForLevel(titleEntry);
 
-			// assemble the string
-
-			wcscpy(text, baseText);
-			int pos = wcslen(text);
-
-			text[pos++] = ' ';
-
-			while (*title) {
-				char chr = *(title++);
-				if (chr != '-')
-					text[pos++] = chr;
+			//Display messages system lines (edited by Kazuki_4ys)
+			GetJapaneseWorldName(text, pathManager.completionMessageWorldNum-1); //GetJapaneseWorldName isnt only Japanese wmap names
+			if(SetGameLanguage == 0) {
+				tmpUtf8Message[0] = utf16ToUtf8(completionMsgsEN[type]);
 			}
-
-			text[pos++] = '!';
-			text[pos++] = 0;
-			baseText = text;
+			if(SetGameLanguage == 1) {
+				tmpUtf8Message[0] = utf16ToUtf8(completionMsgsJP[type]);
+			}
+			if(SetGameLanguage == 2) {
+				tmpUtf8Message[0] = utf16ToUtf8(completionMsgsDE[type]);
+			}
+			if(SetGameLanguage == 3) {
+				tmpUtf8Message[0] = utf16ToUtf8(completionMsgsIT[type]);
+			}
+			tmpUtf8Message[1] = utf16ToUtf8(text);
+			sprintf(sprintfDestBuffer,
+				tmpUtf8Message[0],
+				tmpUtf8Message[1]
+				);
+			wchar_t *assembleMessage = utf8ToUtf16(sprintfDestBuffer);
+			yesNoWindow->T_question_00->SetString(assembleMessage);
+			yesNoWindow->T_questionS_00->SetString(assembleMessage);
+			
+			EGG__Heap__free(tmpUtf8Message[0], GetArchiveHeap());//確保したメモリ解放
+			EGG__Heap__free(tmpUtf8Message[1], GetArchiveHeap());
+			EGG__Heap__free(assembleMessage, GetArchiveHeap());
 		}
 
-		yesNoWindow->T_question_00->SetString(baseText);
-		yesNoWindow->T_questionS_00->SetString(baseText);
 	}
 
 	if (!yesNoWindow->animationActive) {
@@ -1216,3 +1477,13 @@ void NewerMapDrawFunc() {
 	SetCurrentCameraID(0);
 }
 
+bool dWMBorderData::load(const char* path)
+{
+	void* temp = fileLoader.load(path);
+	fileLoader.unload();
+	if (temp) {
+		this->data = (dWMBorderFile_s*)temp;
+		return true;
+	}
+	return false;
+}

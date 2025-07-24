@@ -44,8 +44,30 @@ void SetupKameck(daBoss *actor, daKameckDemo *Kameck) {
 
 }
 
+void SetupKameckFromRightSide(daBoss *actor, daKameckDemo *Kameck) { //This function has a graphic effect bug.
 
-void CleanupKameck(daBoss *actor, daKameckDemo *Kameck) {
+	// 音楽の再生を停止
+	StopBGMMusic();
+
+	// 必要なフラッグを設定、マリオをデモモードへ移行
+	// necessary[形]:必要な、不可欠な　←覚える
+	dStage32C_c::instance->freezeMarioBossFlag = 1;
+	WLClass::instance->_4 = 4;
+	WLClass::instance->_8 = 0;
+
+	MakeMarioEnterDemoMode();
+
+	// カメックの位置
+	Vec pos = (Vec){actor->pos.x + 248.0f, actor->pos.y + 104.0f, 3564.0f};
+	S16Vec rot = (S16Vec){0, 180, 0}; //x,y,z?
+
+	// カメック、誕生－
+	actor->Kameck = (daKameckDemo*)actor->createChild(KAMECK_FOR_CASTLE_DEMO, (dStageActor_c*)actor, 0, &pos, &rot, 0);
+	actor->Kameck->doStateChange(&daKameckDemo::StateID_DemoWait);
+
+}
+
+void CleanupKameck(daBoss *actor, daKameckDemo *Kameck) { //カメックさん、ばいばいなーん
 	// Clean up the flags and Kameck
 	dStage32C_c::instance->freezeMarioBossFlag = 0;
 	WLClass::instance->_8 = 1;
@@ -56,6 +78,15 @@ void CleanupKameck(daBoss *actor, daKameckDemo *Kameck) {
 	actor->Kameck->Delete(1);
 }
 
+void CleanupKameckForSMV(daBoss *actor, daKameckDemo *Kameck) {
+	// Clean up the flags and Kameck
+	dStage32C_c::instance->freezeMarioBossFlag = 0;
+	WLClass::instance->_8 = 1;
+
+	MakeMarioExitDemoMode();
+
+	actor->Kameck->Delete(1);
+}
 
 bool GrowBoss(daBoss *actor, daKameckDemo *Kameck, float initialScale, float endScale, float yPosModifier, int timer) {
 	if (timer == 130) { actor->Kameck->doStateChange(&daKameckDemo::StateID_DemoSt); }
@@ -76,7 +107,7 @@ bool GrowBoss(daBoss *actor, daKameckDemo *Kameck, float initialScale, float end
 		actor->pos.y = actor->pos.y + (yPosModifier/80.0);
 	}
 
-	if (timer == 360) {
+	if (timer == 360) {		// leave kamek
 		Vec tempPos = (Vec){actor->pos.x - 40.0f, actor->pos.y + 120.0f, 3564.0f};
 		S16Vec nullRot = {0,0,0};
 		Vec oneVec = {1.0f, 1.0f, 1.0f};
@@ -93,8 +124,67 @@ bool GrowBoss(daBoss *actor, daKameckDemo *Kameck, float initialScale, float end
 	return false;
 }
 
+bool GrowBossForSMV(daBoss *actor, daKameckDemo *Kameck, float initialScale, float endScale, float yPosModifier, int timer) { //for from right side
+	if (timer == 130) { actor->Kameck->doStateChange(&daKameckDemo::StateID_DemoSt); }
+	if (timer == 400) { actor->Kameck->doStateChange(&daKameckDemo::StateID_DemoSt2); }
 
-void OutroSetup(daBoss *actor) {
+	float scaleSpeed, yPosScaling;
+
+	if (timer == 150) {
+		//StartBGMMusic();
+		PlaySound(actor, SE_BOSS_IGGY_WANWAN_TO_L);
+		}
+
+	if ((timer > 150) && (timer < 230)) {
+		scaleSpeed = (endScale -initialScale) / 80.0;
+
+		float modifier;
+
+		modifier = initialScale + ((timer - 150) * scaleSpeed);
+
+		actor->scale = (Vec){modifier, modifier, modifier};
+		actor->pos.y = actor->pos.y + (yPosModifier/80.0);
+	}
+
+	if (timer == 360) {
+		Vec tempPos = (Vec){actor->pos.x + 320.0f, actor->pos.y + 120.0f, 3564.0f};
+		S16Vec nullRot = {0,0,0};
+		Vec oneVec = {1.0f, 1.0f, 1.0f};
+		SpawnEffect("Wm_ob_greencoinkira", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_mr_yoshiicehit_a", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_mr_yoshiicehit_b", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_ob_redringget", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_ob_keyget01", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_ob_greencoinkira_a", 0, &tempPos, &nullRot, &oneVec);
+		SpawnEffect("Wm_ob_keyget01_c", 0, &tempPos, &nullRot, &oneVec);
+	}
+
+	if (timer > 420) { return true; }
+	return false;
+}
+
+bool GrowBossNoKameck(daBoss *actor, float initialScale, float endScale, float yPosModifier, int timer) { //カメックお断り this lines from NSMLW
+	float scaleSpeed, yPosScaling;
+
+	if (timer == 30) { PlaySound(actor, SE_BOSS_IGGY_WANWAN_TO_L);  }
+	
+	if ((timer > 30) && (timer < 110)) {
+		scaleSpeed = (endScale -initialScale) / 80.0;
+	
+		float modifier;
+
+		modifier = initialScale + ((timer - 30) * scaleSpeed);
+		
+		actor->scale = (Vec){modifier, modifier, modifier};
+		actor->pos.y = actor->pos.y + (yPosModifier/80.0);
+	}
+
+	if (timer > 200) { return true; }
+	return false;
+}
+
+
+void OutroSetup(daBoss *actor) { //ボス死滅処理のセットアップ
 	actor->removeMyActivePhysics();
 
 	StopBGMMusic();
@@ -108,7 +198,7 @@ void OutroSetup(daBoss *actor) {
 }
 
 
-bool ShrinkBoss(daBoss *actor, Vec *pos, float scale, int timer) {
+bool ShrinkBoss(daBoss *actor, Vec *pos, float scale, int timer) { //ボス縮小
 	// Adjust actor to equal the scale of your boss / 80.
 	actor->scale.x -= scale / 80.0;
 	actor->scale.y -= scale / 80.0;
@@ -128,8 +218,7 @@ bool ShrinkBoss(daBoss *actor, Vec *pos, float scale, int timer) {
 	else { return false; }
 }
 
-
-void BossExplode(daBoss *actor, Vec *pos) {
+void BossExplode(daBoss *actor, Vec *pos) { //ボスが縮んで消え失せた後に出るエフェクトの設定
 	actor->scale.x = 0.0;
 	actor->scale.y = 0.0;
 	actor->scale.z = 0.0;
@@ -145,6 +234,18 @@ void BossExplode(daBoss *actor, Vec *pos) {
 
 	//MakeMarioEnterDemoMode();
 	BossGoalForAllPlayers();
+}
+
+void BossExplodeWithoutGoal(daBoss *actor, Vec *pos) { //ボスが縮んで消え失せた後に出るエフェクトの設定
+	actor->scale.x = 0.0;
+	actor->scale.y = 0.0;
+	actor->scale.z = 0.0;
+
+	S16Vec nullRot = {0,0,0};
+	Vec twoVec = {2.0f, 2.0f, 2.0f};
+	SpawnEffect("Wm_ob_keyget02", 0, pos, &nullRot, &twoVec);
+	actor->dying = 1;
+	actor->timer = 0;
 }
 
 void BossGoalForAllPlayers() {

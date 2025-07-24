@@ -31,7 +31,7 @@ class dWorldCamera_c : public dBase_c {
 
 		bool followPlayer;
 		void panToBounds(float left, float top, float right, float bottom);
-		void panToPosition(float x, float y, float zoom=STD_ZOOM);
+		void panToPosition(float x, float y, float zoom=STD_ZOOM, bool MapViewReturn = false);
 		bool panning;
 		float panFromX, panFromY, panToX, panToY;
 		float panFromZoom, panToZoom;

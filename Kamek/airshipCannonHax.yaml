@@ -1,0 +1,16 @@
+---
+# By wakanameko
+
+source_files: [../src/airshipCannonHax.S]
+hooks: 
+  - name: shotEverythingsASMType1
+    type: branch_insn
+    src_addr_pal: 0x808a1368 # li r3, 0x85
+    branch_type: bl
+    target_func: 'doShotEverythingsASM'
+
+  - name: shotEverythingsASMSettings
+    type: branch_insn
+    src_addr_pal: 0x808a137c # or r4, r8, r0
+    branch_type: bl
+    target_func: 'shotEverythingsASMSettings'

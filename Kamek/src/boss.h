@@ -34,11 +34,16 @@ public:
 // Functions
 void DamagePlayer(dEn_c* actor, ActivePhysics *apThis, ActivePhysics *apOther);
 void SetupKameck(daBoss* actor, daKameckDemo *Kameck);
+void SetupKameckFromRightSide(daBoss* actor, daKameckDemo *Kameck);
 void CleanupKameck(daBoss* actor, daKameckDemo *Kameck);
+void CleanupKameckForSMV(daBoss* actor, daKameckDemo *Kameck);
 bool GrowBoss(daBoss* actor, daKameckDemo *Kameck, float initialScale, float endScale, float yPosModifier, int timer);
+bool GrowBossForSMV(daBoss* actor, daKameckDemo *Kameck, float initialScale, float endScale, float yPosModifier, int timer);
+bool GrowBossNoKameck(daBoss* actor, float initialScale, float endScale, float yPosModifier, int timer);
 void OutroSetup(daBoss* actor);
 bool ShrinkBoss(daBoss *actor, Vec *pos, float scale, int timer);
 void BossExplode(daBoss* actor, Vec *pos);
+void BossExplodeWithoutGoal(daBoss* actor, Vec *pos);
 void PlayerVictoryCries(daBoss* actor);
 void BossGoalForAllPlayers();
 

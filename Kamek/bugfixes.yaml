@@ -1,7 +1,7 @@
 ---
 # This has kind of turned into the "random stuff that we don't want to make a yaml for"
 # yaml, hasn't it...
-source_files: [../src/randomcrap.S, ../src/music.cpp, ../src/fix38.S, ../src/nullsub.S, ../src/newer.cpp]#, ../src/anmconstruct.S]
+source_files: [../src/randomcrap.S, ../src/music.S, ../src/music.cpp, ../src/fix38.S, ../src/nullsub.S, ../src/newer.cpp]#, ../src/anmconstruct.S]
 hooks:
   - name: TryAndFixScoreGlitch
     type: branch_insn
@@ -378,3 +378,42 @@ hooks:
     branch_type: bl
     src_addr_pal: 0x80816370
     target_func: 'JrFloorFireHax'
+
+# Custom SFX by Asu-chan
+
+  - name: SFXHax
+    type: branch_insn
+    src_addr_pal: 0x801951D0
+    branch_type: b
+    target_func: 'SFXHax'
+
+  - name: NewSFXHax
+    type: branch_insn
+    src_addr_pal: 0x80283CE0
+    branch_type: b
+    target_func: 'NewSFXHax'
+
+  - name: LoadAllSFXs
+    type: branch_insn
+    src_addr_pal: 0x802D4D50
+    branch_type: bl
+    target_func: 'LoadAllSFXs'
+
+  - name: YoshiSFXFix1
+    type: branch_insn
+    src_addr_pal: 0x8014FBAC
+    branch_type: bl
+    target_func: 'fuckingYoshiStuff()'
+
+  - name: YoshiSFXFix2
+    type: branch_insn
+    src_addr_pal: 0x8014FC6C
+    branch_type: bl
+    target_func: 'fuckingYoshiStuff()'
+
+# PermanentFrontFog by LiQ
+
+  - name: PermanentFrontFog
+    type: patch
+    addr_pal: 0x800eb354
+    data: '48000018'

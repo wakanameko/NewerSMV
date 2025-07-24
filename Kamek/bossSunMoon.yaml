@@ -1,0 +1,39 @@
+---
+#Replaces Actor 485 EN_LIFT_BURANKO (Sprite 123)
+
+
+source_files: [../src/bossSunMoon.cpp]
+hooks:
+  - name: BossSMBuild
+    type: add_func_pointer
+    src_addr_pal: 0x80AF8E40
+    target_func: 'daBossSM_c::build()'
+
+  - name: BossSMSpriteFileInfo
+    type: add_func_pointer
+    src_addr_pal: 0x8031ad38
+    target_func: 'bSMArcNameList'
+    # 0x8031AB4C + sprite num * 0x4 == offset
+
+  ################################################
+  # Kill other sprite hooks (inspired from SLLW) #
+  ################################################
+
+  # I added this hook from SLLW for testing newOnExecute
+  #- name: EN_BUBBLE_kill
+  #  type: add_func_pointer
+  #  src_addr_pal: 0x80ADF048
+  #  target_func: 'EN_BUBBLE::newOnExecute()'
+  #  # build address -> 0x80ADEF88
+
+  #- name: BROS_ICEBALL_kill
+  #  type: add_func_pointer
+  #  src_addr_pal: 0x80955B18
+  #  target_func: 'BROS_ICEBALL::newOnExecute()'
+  #  # src_addr_pal: 0x80955A58
+
+  #- name: EN_KERONPA_kill
+  #  type: add_func_pointer
+  #  src_addr_pal: 0x80ADF048
+  #  target_func: 'EN_KERONPA::newOnExecute()'
+

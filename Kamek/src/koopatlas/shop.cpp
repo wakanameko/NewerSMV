@@ -543,7 +543,8 @@ void dWMShop_c::loadInfo() {
 
 	wchar_t shopName[100];
 	// TODO: refactor this a bit
-	const char *sourceName = dLevelInfo_c::s_info.getNameForLevel(shopNameEntry);
+	// edited by wakanameko base txt is here: const char *sourceName = dLevelInfo_c::s_info.getNameForLevel(shopNameEntry);
+	const wchar_t *sourceName = dLevelInfo_c::s_info.getNameForLevel(shopNameEntry);
 	int charCount = 0;
 	
 	while (*sourceName != 0 && charCount < 99) {

@@ -14,6 +14,7 @@ extern char isLockPlayerRotation;
 extern s16 lockedPlayerRotation;
 
 extern bool NoMichaelBuble;
+extern bool hideUIMode;
 
 mTexture_c efbTexture;
 bool getNextEFB = false;
@@ -89,6 +90,9 @@ class dCreditsMgr_c : public dActorState_c {
 		m2d::EmbedLayout_c layout;
 		m2d::EmbedLayout_c titleLayout;
 
+		int wcslen_nsmbw(const wchar_t* txt);
+		int getLineCount(const wchar_t* txt);
+		
 		bool titleLayoutVisible;
 
 		int countdown;
@@ -112,7 +116,7 @@ class dCreditsMgr_c : public dActorState_c {
 			*RightName, *RightNameS;
 		nw4r::lyt::Pane
 			*TitleContainer, *NamesContainer,
-			*OneNameC, *TwoNamesC, *N_proportionC_00;
+			*OneNameC, *TwoNamesC, *N_proportionC_00, *N_staffCredit_00;
 
 		void doAutoscroll(int pathID);
 		void positionPlayers();
@@ -127,6 +131,8 @@ class dCreditsMgr_c : public dActorState_c {
 		void exitStage();
 
 		bool endingMode;
+
+		int textNum;
 
 //		USING_STATES(dCreditsMgr_c);
 //		DECLARE_STATE(Wait);
@@ -172,6 +178,8 @@ int dCreditsMgr_c::onCreate() {
 
 	//acState.setState(&StateID_Wait);
 
+	this->textNum = 0;
+
 	return true;
 }
 
@@ -190,6 +198,11 @@ int dCreditsMgr_c::onExecute() {
 		danceCommand = (danceInfo_s*)getResource("CreditsBG", "/Dance.bin");
 
 	char *autoscrInfo = ((char*)dBgGm_c::instance) + 0x900AC;
+
+	if(hideUIMode){
+		TitleContainer->alpha = 0;
+		OneNameC->alpha = 0;
+	}
 
 	fauxScrollFrame++;
 	if (fauxScrollFrame > 60)
@@ -315,16 +328,54 @@ int dCreditsMgr_c::onExecute() {
 					break;
 
 				case 7: { // Set names. FUN!
-					int titleLength = *(read++);
-					int nameCount = *(read++);
+					// New method
+					this->textNum++;
+					OSReport("textNum: %d\n", this->textNum);
 
-					WriteAsciiToTextBox(Title, (const char*)read);
-					WriteAsciiToTextBox(TitleS, (const char*)read);
+					int titleLength = *((read++));
+					int nameCount = *(read++);	// バイナリの読み取りは通常通り行わせるため残しています。
+
+					// Title
+					WriteBMGToTextBox(Title, GetBMG(), 0x601, this->textNum, 0);
+					WriteBMGToTextBox(TitleS, GetBMG(), 0x601, this->textNum, 0);
 
 					read += titleLength;
 
-					WriteAsciiToTextBox(Name, (const char*)read);
-					WriteAsciiToTextBox(NameS, (const char*)read);
+					// Name
+					nameCount = (getLineCount(GetBMGMessage(0x602, this->textNum))) + 1;
+					OSReport("nameCount: %d\n", nameCount);
+
+					WriteBMGToTextBox(Name, GetBMG(), 0x602, this->textNum, 0);
+					WriteBMGToTextBox(NameS, GetBMG(), 0x602, this->textNum, 0);
+
+					float calcHeight = 29.0f * nameCount;
+					TitleContainer->trans.y = (calcHeight * 0.5f) + 3.0f;
+
+					OneNameC->SetVisible(true);
+					TwoNamesC->SetVisible(false);
+					}
+					/*original
+					int titleLength = *((read++));
+					int nameCount = *(read++);
+
+					OSReport("titleLength: %d\n", titleLength);
+					OSReport("nameCount: %d\n", nameCount);
+
+					// check title
+					OSReport("Title: %s\n", (const wchar_t*)read);
+					//edited by wakanameko base txt is here: WriteAsciiToTextBox(Title, (const char*)read);
+					WriteAsciiToTextBox(Title, (const wchar_t*)read);
+					//edited by wakanameko base txt is here: WriteAsciiToTextBox(TitleS, (const char*)read);
+					WriteAsciiToTextBox(TitleS, (const wchar_t*)read);
+
+					read += titleLength;
+
+					// check name
+					OSReport("Name: %s\n", (const wchar_t*)read);
+					//edited by wakanameko base txt is here: WriteAsciiToTextBox(Name, (const char*)read);
+					WriteAsciiToTextBox(Name, (const wchar_t*)read);
+					//edited by wakanameko base txt is here: WriteAsciiToTextBox(NameS, (const char*)read);
+					WriteAsciiToTextBox(NameS, (const wchar_t*)read);
 
 					float calcHeight = 29.0f * nameCount;
 					TitleContainer->trans.y = (calcHeight * 0.5f) + 3.0f;
@@ -332,7 +383,9 @@ int dCreditsMgr_c::onExecute() {
 					OneNameC->SetVisible(true);
 					TwoNamesC->SetVisible(false);
 
-					} break;
+					}*/
+					
+					break;
 
 				case 8:
 					titleLayoutVisible = true;
@@ -439,6 +492,30 @@ bool dCreditsMgr_c::loadLayout() {
 		layoutLoaded = true;
 	}
 	return layoutLoaded;
+}
+
+
+int dCreditsMgr_c::wcslen_nsmbw(const wchar_t* txt) {
+	int currLen = 0;
+	int currChar = 0;
+	while(txt[currChar] != 0) {
+		if(txt[currChar] == 0xB) {
+			currChar += 2;
+		}
+
+		currChar++;
+		currLen++;
+	}
+	return currLen;
+}
+
+int dCreditsMgr_c::getLineCount(const wchar_t* txt) {
+	int lineCount = 0;
+
+	for(int i = 0; i < this->wcslen_nsmbw(txt); i++) 
+		if(txt[i] == L'\n') lineCount++;
+
+	return lineCount;
 }
 
 bool dCreditsMgr_c::loadTitleLayout() {
@@ -1009,5 +1086,4 @@ void LoadDanceValues() {
 
 	replayRecord();
 }
-
 

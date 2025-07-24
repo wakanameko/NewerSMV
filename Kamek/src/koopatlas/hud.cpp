@@ -1,5 +1,6 @@
 #include "koopatlas/hud.h"
 #include <newer.h>
+#include <gameLanguage.h>
 
 dWMHud_c *dWMHud_c::instance = 0;
 
@@ -68,8 +69,8 @@ int dWMHud_c::onCreate() {
 		layout.resetAnim(SHOW_HEADER);
 		layout.resetAnim(HIDE_ALL);
 
-		static const char *tbNames[2] = {"MenuButtonInfo", "ItemsButtonInfo"};
-		layout.setLangStrings(tbNames, (int[2]){12, 15}, 4, 2);
+		static const char *tbNames[3] = {"MenuButtonInfo", "ItemsButtonInfo", "MenuButtonInf_00"};
+		layout.setLangStrings(tbNames, (int[3]){12, 15, 10}, 4, 3);
 
 		static const char *paneNames[] = {
 			"N_IconPos1P_00", "N_IconPos2P_00",
@@ -221,14 +222,29 @@ void dWMHud_c::loadHeaderInfo() {
 			nodeForHeader->levelNumber[0]-1, nodeForHeader->levelNumber[1]-1);
 
 	if (infEntry == 0) {
-		LevelName->SetString(L"Unknown Level Name!");
-		LevelNameS->SetString(L"Unknown Level Name!");
+		if (SetGameLanguage == 0){	// EN messages by NewerTeam
+			LevelName->SetString(L"Unknown Level Name!");
+			LevelNameS->SetString(L"Unknown Level Name!");
+		}
+		if (SetGameLanguage == 1){	// JP messages by wakanameko
+			LevelName->SetString(L"ふめいな ステージめい です!");
+			LevelNameS->SetString(L"ふめいな ステージめい です!");
+		}
+		if (SetGameLanguage == 2){	//DE messages by Vadenimo
+			LevelName->SetString(L"Unbekannter Levelname!");
+			LevelNameS->SetString(L"Unbekannter Levelname!");
+		}
+		if (SetGameLanguage == 3){	//IT messages by Jacopo Plays
+			LevelName->SetString(L"Livello Dal Nome Sconosciuto!");
+			LevelNameS->SetString(L"Livello Dal Nome Sconosciuto!");
+		}
 		return;
 	}
 
 	// LEVEL NAME
 	wchar_t convertedLevelName[100];
-	const char *sourceLevelName = levelInfo->getNameForLevel(infEntry);
+	// edited by wakanameko base txt is here: const char *sourceLevelName = levelInfo->getNameForLevel(infEntry);
+	const wchar_t *sourceLevelName = levelInfo->getNameForLevel(infEntry);
 	int charCount = 0;
 	
 	while (*sourceLevelName != 0 && charCount < 99) {
@@ -337,10 +353,23 @@ void dWMHud_c::loadHeaderInfo() {
 	headerCol.colourise(save->hudHintH%1000, save->hudHintS, save->hudHintL);
 }
 
+extern int songID2WorldID[19]; //fileselect.cpp // this line from SLLW
 
 void dWMHud_c::loadFooterInfo() {
 	SaveBlock *save = GetSaveFile()->GetBlock(-1);
 
+	if(save->currentMapMusic > 0) {
+		/* edited by Kazuki_4ys base text:
+		//OSReport("Map Music: %d, songID2WorldID: %d\n", save->currentMapMusic, songID2WorldID[save->currentMapMusic]);
+		WriteWorldNameToTextBox(WorldName, songID2WorldID[save->currentMapMusic]);
+		WriteWorldNameToTextBox(WorldNameS, songID2WorldID[save->currentMapMusic]);
+		*/
+		//OSReport("newerWorldID: %d", save->newerWorldID);
+		WriteWorldNameToTextBox(WorldName, save->newerWorldID);
+		WriteWorldNameToTextBox(WorldNameS, save->newerWorldID);
+	}
+
+	/*
 	wchar_t convertedWorldName[32];
 	int i;
 	for (i = 0; i < 32; i++) {
@@ -352,10 +381,11 @@ void dWMHud_c::loadFooterInfo() {
 
 	WorldName->SetString(convertedWorldName);
 	WorldNameS->SetString(convertedWorldName);
+	*/
 
 	WorldName->colour1 = save->hudTextColours[0];
 	WorldName->colour2 = save->hudTextColours[1];
-
+	OSReport("colour1 = %X | colour2 = %X\n", save->hudTextColours[0], save->hudTextColours[1]); // this line from SLLW
 	footerCol.colourise(save->hudHintH%1000, save->hudHintS, save->hudHintL);
 
 	// figure out if stars are needed
@@ -494,9 +524,8 @@ void dWMHud_c::updatePressableButtonThingies() {
 		int beef = (cntType == 0) ? 0 : 1;
 		GameMgrP->currentControllerType = beef;
 
-		WriteBMGToTextBox(
-				layout.findTextBoxByName("ItemsButtonInfo"),
-				GetBMG(), 4, 15, 0);
+		static const char *tbNames[3] = {"MenuButtonInfo", "ItemsButtonInfo", "MenuButtonInf_00"};
+		layout.setLangStrings(tbNames, (int[3]){12, 15, 10}, 4, 3);
 	}
 }
 

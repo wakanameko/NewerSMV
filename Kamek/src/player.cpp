@@ -13,7 +13,20 @@ char NearestPlayer(dStageActor_c* actor) {
 		}
 				// actor->pos.x, actor->pos.y, actor->pos.z,
 				// player->pos.x, player->pos.y, player->pos.z);
-		float distance = VECDistance(&actor->pos, &player->pos);
+		// float distance = VECDistance(&actor->pos, &player->pos);
+		
+		float distance;
+		Vec vdistance;
+		
+		vdistance.x = (&actor->pos.x - &player->pos.x);
+		if (vdistance.x < 0){ vdistance.x * -1; }
+		vdistance.y = (&actor->pos.y - &player->pos.y);
+		if (vdistance.y < 0){ vdistance.y * -1; }
+		vdistance.z = (&actor->pos.z - &player->pos.z);
+		if (vdistance.z < 0){ vdistance.z * -1; }
+
+		distance = (vdistance.x + vdistance.y + vdistance.z);
+
 		if(distance < current) {
 			current = distance;
 			nearest = ii;

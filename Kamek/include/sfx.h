@@ -2,6 +2,8 @@
 #define __KAMEK_SFX_H
 
 #include <common.h>
+#include <asm_sfx.S>
+#include <game.h>
 
 enum SFX {
 	SE_NULL = -1,
@@ -1869,7 +1871,7 @@ enum SFX {
 	STRM_BGM_SELECT_W7 = 1861,
 	STRM_BGM_SELECT_W8 = 1862,
 	STRM_BGM_SELECT_W9 = 1863,
-	STRM_BGM_TITLE = 1864,
+	// empty ^^
 	STRM_BGM_MENU = 1865,
 	STRM_BGM_SWITCH = 1866,
 	STRM_BGM_COURSE_OUT_ALL_BUBBLE = 1867,

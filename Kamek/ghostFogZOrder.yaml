@@ -1,0 +1,11 @@
+---
+source_files:
+  - ../src/ghostFogZOrder.S
+
+hooks:
+  # daLightBlock_c
+  - name: ghostFogZOrderChange
+    type: branch_insn
+    branch_type: bl
+    src_addr_pal: 0x807b5248
+    target_func: 'changeZOrder'

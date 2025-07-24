@@ -1,0 +1,10 @@
+---
+# By wakanameko
+
+source_files: [../src/coinAngle.S]
+hooks:
+  - name: AddOptionWontFallWithQuake
+    type: branch_insn
+    branch_type: bl
+    src_addr_pal: 0x809e5308
+    target_func: 'coinAnglePreventFalling'

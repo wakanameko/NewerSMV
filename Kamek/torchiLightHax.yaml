@@ -1,0 +1,10 @@
+---
+# By wakanameko
+
+source_files: [../src/torchiLightHax.S]
+hooks:   
+  - name: placeBehindOtherSprites
+    type: branch_insn
+    src_addr_pal: 0x808b1008 # li r3, 1
+    branch_type: bl
+    target_func: 'placeBehindOtherSprites'

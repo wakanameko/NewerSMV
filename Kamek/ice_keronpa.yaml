@@ -1,0 +1,61 @@
+---
+source_files: [../src/ice_keronpa.S, ../src/ice_keronpa.cpp, ../src/my_mathlib.cpp]
+hooks:
+  - name: keronpaChangeShotFireSound
+    type: branch_insn
+    src_addr_pal: 0x80a480f0
+    branch_type: bl
+    target_func: 'keronpaChangeShotFireSound'
+
+  - name: keronpaShotFireHookAsm
+    type: branch_insn
+    src_addr_pal: 0x80a480e8
+    branch_type: bl
+    target_func: 'keronpaShotFireHookAsm'
+
+  - name: keronpaShotFireDeleteNopIns1
+    type: patch
+    addr_pal: 0x80a48110
+    data: '60000000'
+
+  - name: keronpaShotFireDeleteNopIns2
+    type: patch
+    addr_pal: 0x80a48118
+    data: '60000000'
+
+  - name: keronpaShotFireDeleteNoPosCopy
+    type: branch_insn
+    src_addr_pal: 0x80a48120
+    branch_type: bl
+    target_func: 'keronpaShotFireDeleteNoPosCopy'
+
+  - name: keronpaCollisionCat2_IceBall_15_YoshiIce_HookPatch1
+    type: patch
+    addr_pal: 0x80a47520
+    data: '7c0802a6'
+    #mflr r0
+
+  - name: keronpaCollisionCat2_IceBall_15_YoshiIce_HookPatch2
+    type: branch_insn
+    src_addr_pal: 0x80a47524
+    branch_type: bl
+    target_func: 'keronpaCollisionCat2_IceBall_15_YoshiIce_Hook'
+
+  - name: keronpaChangeShippo
+    type: branch_insn
+    src_addr_pal: 0x80a46638
+    branch_type: bl
+    target_func: 'keronpaChangeShippo'
+
+  - name: keronpaChangeExplodeEffect
+    type: branch_insn
+    src_addr_pal: 0x80a47c54
+    branch_type: bl
+    target_func: 'keronpaChangeExplodeEffect'
+
+  # daKeronpaFire
+  - name: keronpaFireChangeBodyEffect
+    type: branch_insn
+    src_addr_pal: 0x808201d0
+    branch_type: bl
+    target_func: 'keronpaFireChangeBodyEffect'

@@ -1,0 +1,56 @@
+---
+# By wakanameko
+
+source_files: [../src/airshipCannonHax.S]
+hooks: 
+  # ボムへいの上限(8体)を突破します。
+#  - name: NoLimit_Bomuheis
+#    type: branch_insn
+#    src_addr_pal: 0x808a151c
+#    branch_type: bl
+#    target_func: 'nolimitBombs'
+
+
+  # なんでも発射します。
+  - name: shotEverythingsASMPRE
+    type: branch_insn
+    src_addr_pal: 0x808a14ec # bne LAB_808a1504
+    branch_type: bl
+    target_func: 'prepareShotEverythingsASM'
+
+  - name: shotEverythingsASMType1
+    type: branch_insn
+    src_addr_pal: 0x808a1214 # EN_CANNON_BULLETのActorIDが入ってるAddress
+    branch_type: bl
+    target_func: 'doShotEverythingsASMType1'
+
+  - name: shotEverythingsASMType1AS
+    type: branch_insn
+    src_addr_pal: 0x808a121c # EN_CANNON_BULLETのsettingが入ってるAddress
+    branch_type: bl
+    target_func: 'doShotEverythingsASMType1ActorSetting'
+
+  - name: shotEverythingsASMType2PRE
+    type: branch_insn
+    src_addr_pal: 0x808a1334 # r26にnybble9を保存させる
+    branch_type: bl
+    target_func: 'prepareShotEverythingsASMType2'
+
+  - name: shotEverythingsASMType2
+    type: branch_insn
+    src_addr_pal: 0x808a1368 # EN_BOMHEIのActorIDが入ってるAddress
+    branch_type: bl
+    target_func: 'doShotEverythingsASMType2'
+
+  - name: shotEverythingsASMType2AS
+    type: branch_insn
+    src_addr_pal: 0x808a137c # EN_BOMHEIのsettingが入ってるAddress
+    branch_type: bl
+    target_func: 'doShotEverythingsASMType2ActorSetting'
+
+  # other things
+  - name: shotSpeedAdjustShell
+    type: branch_insn
+    src_addr_pal: 0x80038350 # blr in daEnShell_c onCreate
+    branch_type: b
+    target_func: 'shotSpeedAdjustShell'

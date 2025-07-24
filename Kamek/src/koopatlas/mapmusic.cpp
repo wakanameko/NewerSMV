@@ -184,3 +184,14 @@ void dKPMusic::playStarMusic() {
 	s_starPlaying = true;
 }
 
+
+void dKPMusic::stopStarMusic() {
+	if(!s_starPlaying)
+		return;
+
+	if (s_starHandle.Exists())
+		s_starHandle.Stop(15);
+
+	s_starPlaying = false;
+}
+

@@ -1,5 +1,6 @@
 #include "koopatlas/starcoin.h"
 #include <game.h>
+#include <gameLanguage.h>
 
 dWMStarCoin_c *dWMStarCoin_c::instance = 0;
 
@@ -89,8 +90,9 @@ int dWMStarCoin_c::onCreate() {
 		static const char *tbNames[] = {
 			"LeftTitle", "RightTitle", "TotalCoinCount", "UnspentCoinCount",
 			"EarnedCoinCount", "EarnedCoinMax", "BtnBackText",
+			"TotalCoinsTitle", "UnspentTitle", // two containts added by wakanameko
 		};
-		layout.getTextBoxes(tbNames, &LeftTitle, 7);
+		layout.getTextBoxes(tbNames, &LeftTitle, 9);
 
 		static const char *picNames[] = {
 			"DPadLeft", "DPadRight",
@@ -127,6 +129,7 @@ int dWMStarCoin_c::onExecute() {
 	}
 
 	return true;
+
 }
 
 int dWMStarCoin_c::onDraw() {
@@ -191,8 +194,26 @@ bool dWMStarCoin_c::canScrollRight() const {
 	return (currentSectionIndex < (availableSectionCount - 1));
 }
 
+// HARD CODINGS IN HERE!!
 void dWMStarCoin_c::loadInfo() {
 	WriteBMGToTextBox(BtnBackText, GetBMG(), 3, 1, 0);
+
+	if (SetGameLanguage == 0){	// EN messages by NewerTeam
+		TotalCoinsTitle->SetString(L"StarCoins:");
+		UnspentTitle->SetString(L"unspent");
+	}
+	if (SetGameLanguage == 1){	// JP messages by wakanameko 
+		TotalCoinsTitle->SetString(L"スターコイン:");
+		UnspentTitle->SetString(L"ぜん体のコイン");
+	}
+	if (SetGameLanguage == 2){	// DE messages by Vadenimo
+		TotalCoinsTitle->SetString(L"Sternenmünzen:");
+		UnspentTitle->SetString(L"unverbraucht");
+	}
+	if (SetGameLanguage == 3){	// IT messages by Jacopo Plays
+		TotalCoinsTitle->SetString(L"Monete Stella:");
+		UnspentTitle->SetString(L"Non Spese");
+	}
 
 	int unspentCoins = getUnspentStarCoinCount();
 	int coins = getStarCoinCount();
@@ -319,9 +340,17 @@ void dWMStarCoin_c::loadSectionInfo() {
 	// if the second column is empty, remove its name
 	if (currentPosition[1] == 0 && useSubworlds)
 		names[1] = 0;
+	
+	// four lines from SLLW by rsm(RedStoneMatt)
+	WriteWorldNameToTextBox(LeftTitle, currentSection);
+	if (names[1])
+		WriteAsciiToTextBox(RightTitle, linfo->getNameForLevel(names[1]));
+	RightTitle->SetVisible(names[1] != 0);
 
 	// work out the names
+	// from SLLW
 	WriteAsciiToTextBox(LeftTitle, linfo->getNameForLevel(names[0]));
+	// WriteAsciiToTextBox(LeftTitle, currentSection);
 	if (names[1])
 		WriteAsciiToTextBox(RightTitle, linfo->getNameForLevel(names[1]));
 	RightTitle->SetVisible(names[1] != 0);
@@ -373,8 +402,10 @@ static const int secretCode[] = {
 static const int secretCodeButtons = WPAD_UP|WPAD_DOWN|WPAD_LEFT|WPAD_RIGHT|WPAD_ONE|WPAD_TWO;
 static int secretCodeIndex = 0;
 static int minusCount = 0;
+static int plusCount = 0;
 extern bool enableHardMode;
 extern bool enableDebugMode;
+//extern bool enableCheatMode;
 extern u8 isReplayEnabled;
 
 void dWMStarCoin_c::beginState_ShowWait() {
@@ -387,6 +418,7 @@ void dWMStarCoin_c::beginState_ShowWait() {
 
 	secretCodeIndex = 0;
 	minusCount = 0;
+	plusCount = 0;
 }
 void dWMStarCoin_c::executeState_ShowWait() {
 	if (!layout.isAnimOn(SHOW_ALL))
@@ -444,9 +476,10 @@ void dWMStarCoin_c::executeState_Wait() {
 	int nowPressed = Remocon_GetPressed(GetActiveRemocon());
 
 	if ((GetActiveRemocon()->heldButtons == 0xc10) && (nowPressed & 0xc10)) { // A, B, and Plus
-
 		const int lineCountOn = 9, lineCountOff = 2;
-		static const wchar_t *linesOn[lineCountOn] = {
+
+		//Turned on messages
+		static const wchar_t *hardModeEN[9] = {	// EN messages by NewerTeam
 			L"You've activated Hard Mode!",
 			L" ",
 			L"In Hard Mode, Mario will die",
@@ -457,20 +490,89 @@ void dWMStarCoin_c::executeState_Wait() {
 			L"hold on to your hat, you're",
 			L"in for a wild ride!",
 		};
-		static const wchar_t *linesOff[lineCountOff] = {
+		static const wchar_t *hardModeJP[9] = {	// JP messages by wakanameko
+			L"ハードモードへようこそ!",
+			L" ",
+			L"ハードモードでは、マリオが",
+			L"いちげきでやられます。また、",
+			L"じかんせいげんがきびしく",
+			L"なります。",
+			L"こんなにむずかしいマリオは",
+			L"ほかにないでしょう。",
+			L"うでだめしをしてみましょう!",
+		};
+		static const wchar_t *hardModeDE[9] = {	// DE messages by Vadenimo
+			L"Der Harte Modus ist aktiviert!",
+			L" ",
+			L"Im Harten Modus stirbt Mario,",
+			L"wenn er Schaden zu sich nimmt.",
+			L"Das Zeitlimit ist auch strenger!",
+			L" ",
+			L"Nimm Yoshi mit, halte deine",
+			L"Mütze fest, es wird Zeit",
+			L"für ein wildes Abenteuer!",
+		};
+		static const wchar_t *hardModeIT[9] = {	// IT messages by Jacopo Plays
+			L"Hai attivato la modalità difficile!",
+			L" ",
+			L"Nella modalità difficile mario morirà",
+			L"ogni volta che prenderà danno, e",
+			L"il timer sarà più corto.",
+			L" ",
+			L"Quindi prendi il tuo Yoshi, e",
+			L"tieni il cappello, sei",
+			L"in una corsa scatenata!",
+		};
+		//Turned off messages
+		static const wchar_t *hardModeOffEN[2] = {	// EN messages by NewerTeam
 			L"Hard Mode has been",
 			L"turned off.",
+		};
+		static const wchar_t *hardModeOffJP[2] = {	// JP messages by wakanameko
+			L"ハードモードがオフになり",
+			L"ました。",
+		};
+		static const wchar_t *hardModeOffDE[2] = {	// DE messages by Vadenimo
+			L"Der Harte Modus",
+			L"wurde deaktiviert.",
+		};
+		static const wchar_t *hardModeOffIT[2] = {	// IT messages by Jacopo Plays
+			L"La modalità difficile è stata",
+			L"disattivata.",
 		};
 
 		if (!enableHardMode) {
 			enableHardMode = true;
 			OSReport("Hard Mode enabled!\n");
-			MapSoundPlayer(SoundRelatedClass, SE_VOC_MA_CS_COURSE_IN_HARD, 1);
-			showSecretMessage(L"Hard Mode", linesOn, lineCountOn);
+			SFX courseHardSFX[] = {SE_VOC_MA_CS_COURSE_IN_HARD, SE_VOC_LU_CS_COURSE_IN_HARD, SE_VOC_KO_CS_COURSE_IN_HARD, SE_VOC_KO2_CS_COURSE_IN_HARD};
+			MapSoundPlayer(SoundRelatedClass, courseHardSFX[Player_ID[0]], 1);
+			if (SetGameLanguage == 0){	// EN messages by NewerTeam
+				showSecretMessage(L"Hard Mode", hardModeEN, lineCountOn);
+			}
+			if (SetGameLanguage == 1){	// JP message by wakanameko
+				showSecretMessage(L"ハードモード", hardModeJP, lineCountOn);
+			}
+			if (SetGameLanguage == 2){	// DE message by Vadenimo
+				showSecretMessage(L"Harter Modus", hardModeDE, lineCountOn);
+			}
+			if (SetGameLanguage == 3){	// IT message by Jacopo Plays
+				showSecretMessage(L"Modalità difficile", hardModeIT, lineCountOn);
+			}
 		} else {
 			enableHardMode = false;
 			OSReport("Hard Mode disabled!\n");
-			showSecretMessage(L"Classic Mario", linesOff, lineCountOff);
+			if (SetGameLanguage == 0){	// EN message by NewerTeam
+				showSecretMessage(L"Classic Mario", hardModeOffEN, lineCountOff);
+			}
+			if (SetGameLanguage == 1){	// JP message by wakanameko
+				showSecretMessage(L"クラシックモード", hardModeOffJP, lineCountOff);
+			}
+			if (SetGameLanguage == 2){	// DE message by Vadenimo
+				showSecretMessage(L"Klassischer Modus", hardModeOffDE, lineCountOff);
+			}
+			if (SetGameLanguage == 3){	// IT message by Jacopo Plays
+				showSecretMessage(L"Mario Classico", hardModeOffIT, lineCountOff);
+			}
 		}
 		return;
 	}
@@ -485,7 +587,10 @@ void dWMStarCoin_c::executeState_Wait() {
 				//enableDebugMode = !enableDebugMode;
 				//OSReport("Debug mode toggled!\n");
 				const int lineCountOn = 9, lineCountOff = 2;
-				static const wchar_t *linesOn[lineCountOn] = {
+				const int lineCountOn2 = 4;
+
+				//Turned on messages
+				static const wchar_t *replayRecordEN[9] = {	// EN messages by NewerTeam
 					L"The experimental Replay",
 					L"Recording feature has",
 					L"been enabled. Enjoy!",
@@ -496,19 +601,93 @@ void dWMStarCoin_c::executeState_Wait() {
 					L"save your game before you",
 					L"play a level!",
 				};
-				static const wchar_t *linesOff[lineCountOff] = {
+				static const wchar_t *replayRecordJP[9] = {	// JP messages by wakanameko
+					L"みかんせいのリプレイろくが",
+					L"きのうが、オンになりました",
+					L" ",
+					L"あなたのリプレイは、SDカー",
+					L"ドかUSBメモリにほぞんされ",
+					L"ます。",
+					L"ただし、ふあんていなため、",
+					L"ステージをあそぶまえに、セ",
+					L"ーブしておきましょう。",
+				};
+				static const wchar_t *replayRecordDE[lineCountOn] = {	// DE messages by Vadenimo
+					L"Das experimentelle",
+					L"Aufnehmen",
+					L"des Replays wurde",
+					L"aktiviert. Viel Spaß!",
+					L"Die Aufnahmen kannst du",
+					L"auf deinem USB-Stick",
+					L"oder deiner SD-Karte",
+					L"finden, wo das Spiel",
+					L"lolakisiert ist. Es könnte",
+				};
+				static const wchar_t *replayRecordDE2[lineCountOn2] = {	// DE messages section2 by Vadenimo
+					L"nicht gehen, also",
+					L"ist es wichtig dein ",
+					L"Spiel zu speichern,",
+					L"bevor du ein Level spielst.",
+				};
+				static const wchar_t *replayRecordIT[9] = {	// IT messages by Jacopo Plays
+					L"Il replay sperimentale",
+					L"La funzione di registrazione è",
+					L"stata abilitata. Goditela!",
+					L"Troverai i tuoi replay",
+					L"sulla tua SD o USB, a seconda",
+					L"su dove sono i file di Newer.",
+					L"Potrebbe non funzionare, quindi",
+					L"salva il gioco prima di",
+					L"giocare un livello!",
+				};
+				//Turned off messages
+				static const wchar_t *replayRecordOffEN[2] = {	// EN messages by NewerTeam
 					L"Replay Recording",
 					L"turned off.",
+				};
+				static const wchar_t *replayRecordOffJP[2] = {	// JP messages by wakanameko
+					L"リプレイろくがきのうがオフ",
+					L"になりました。",
+				};
+				static const wchar_t *replayRecordOffDE[2] = {	// DE messages by Vadenimo
+					L"Das Aufnehmen des Replays",
+					L"wurde deaktiviert.",
+				};
+				static const wchar_t *replayRecordOffIT[2] = {	// IT messages by Jacopo Plays
+					L"Registrazione del Replay",
+					L"disattivata.",
 				};
 
 				if (isReplayEnabled != 100) {
 					isReplayEnabled = 100;
 					OSReport("Replay Recording enabled!\n");
-					showSecretMessage(L"Nice!", linesOn, lineCountOn);
+					if (SetGameLanguage == 0){	// EN message by NewerTeam
+						showSecretMessage(L"Nice!", replayRecordEN, lineCountOn);
+					}
+					if (SetGameLanguage == 1){	// JP message by wakanameko
+						showSecretMessage(L"リプレイろくが", replayRecordJP, lineCountOn);
+					}
+					if (SetGameLanguage == 2){	// DE message by Vadenimo
+						showSecretMessage(L"Toll!", replayRecordDE, lineCountOn, replayRecordDE2, lineCountOn2);
+					}
+					if (SetGameLanguage == 3){	// IT message by Jacopo Plays
+						showSecretMessage(L"Buono!", replayRecordIT, lineCountOn);
+					}
 				} else {
 					isReplayEnabled = 0;
 					OSReport("Replay Recording disabled!\n");
-					showSecretMessage(L"Nice!", linesOff, lineCountOff);
+					if (SetGameLanguage == 0){	// EN message by NewerTeam
+						showSecretMessage(L"Nice!", replayRecordOffEN, lineCountOff);
+					}
+					if (SetGameLanguage == 1){	// JP message by wakanameko
+						showSecretMessage(L"リプレイろくが", replayRecordOffJP, lineCountOff);
+					}
+					if (SetGameLanguage == 2){	// DE message by Vadenimo
+						showSecretMessage(L"Toll!", replayRecordOffDE, lineCountOff);
+					}
+					if (SetGameLanguage == 3){	// IT message by Jacopo Plays
+						showSecretMessage(L"Buono!", replayRecordOffIT, lineCountOff);
+					}
 				}
 			}
 			return;
@@ -526,9 +705,11 @@ void dWMStarCoin_c::executeState_Wait() {
 
 			if (enableDebugMode) {
 				MapSoundPlayer(SoundRelatedClass, SE_VOC_MA_GET_PRIZE, 1);
-
 				const int msgCount = 9;
-				static const wchar_t *msg[msgCount] = {
+				const int msgCount2 = 9;
+
+				//turned on messages
+				static const wchar_t *debugModeEN[9] = {	// EN messages by NewerTeam
 					L"You've found the Totally",
 					L"Secret Collision Debug Mode.",
 					L"We used this to make the",
@@ -539,8 +720,7 @@ void dWMStarCoin_c::executeState_Wait() {
 					L"some time, but it ended up",
 					L"being pretty useful!",
 				};
-				const int msgCount2 = 9;
-				static const wchar_t *msg2[msgCount2] = {
+				static const wchar_t *debugModeEN2[9] = {
 					L"And yes, I know it doesn't show",
 					L"a couple of things properly",
 					L"like round objects and rolling",
@@ -551,10 +731,97 @@ void dWMStarCoin_c::executeState_Wait() {
 					L"",
 					L"    Treeki, 9th February 2013",
 				};
-				showSecretMessage(L"Groovy!", msg, msgCount, msg2, msgCount2);
+
+				static const wchar_t *debugModeJP[9] = {	// JP messages by wakanameko
+					L"あなたは、ひみつのデバッグ",
+					L"モードをはっけんしました!",
+					L"これをつかうことで、てきや",
+					L"アイテム、じぶんのあたりは",
+					L"んていをひょうじできます!",
+					L" ",
+					L"きっとなにかのやくにたつで",
+					L"しょう。",
+					L" ",
+				};
+				static const wchar_t *debugModeJP2[9] = {
+					L"あ、これまるいものや、アー",
+					L"チじょうになっているものは",
+					L"しっかりひょうじできないか",
+					L"もしれません。",
+					L" ",
+					L"あと、wakanamekoはこのモー",
+					L"ドのどこかにチートきのうを",
+					L"ついかしたみたいですよ?",
+					L"    wakanameko, 2023/6/16",
+				};
+
+				static const wchar_t *debugModeDE[9] = {	// DE messages by Vadenimo
+					L"Du hast den total geheimen",
+					L"Kollisionsdebugmodus aktiviert.",
+					L"Wir nutzten ihn,um die Hitboxen",
+					L"der Gegner und Bosse weniger",
+					L"beschissen zu machen. Grandios,",
+					L"oder?!",
+					L"Nun, es brauchte die Zeit, aber",
+					L"am Ende hat sich herausgestellt,",
+					L"dass es sinnvoll ist!",
+				};
+				static const wchar_t *debugModeDE2[9] = {
+					L"Und ja, mir ist bewusst, dass",
+					L"ein paar Sachen nicht angezeigt",
+					L"werden, wie runde Objekte,",
+					L"rollende Hügel und mehr.",
+					L"Ihr könnt nicht alles haben, oder?",
+					L"Es wundert mich, ob Nintendo",
+					L"sowas Ähnliches hatte...",
+					L"",
+					L"    Treeki, 9. Februar 2013",
+				};
+
+				static const wchar_t *debugModeIT[9] = {	// IT messages by Jacopo Plays
+					L"Hai trovato Totalmente",
+					L"Modalità di debug di collisione.",
+					L"Abbiamo usato questo per fare",
+					L"hitbox sui nostri sprite e i capi",
+					L"fanno meno schifo. Eccezionale",
+					L"Giusto?!",
+					L"Lho fatto solo per sprecare",
+					L"un po' di tempo, ma è finita",
+					L"essendo abbastanza utile!",
+				};
+				static const wchar_t *debugModeIT2[9] = {
+					L"E sì, lo so che non si vede",
+					L"correttamente un paio di cose",
+					L"come oggetti rotondi, colline",
+					L"rotolanti e così via.",
+					L"Non puoi avere tutto, vero?",
+					L"Chissà se Nintendo l'aveva",
+					L"qualcosa come questo...",
+					L"",
+					L"    Treeki, 9 Febbraio 2013",
+				};
+
+				if (SetGameLanguage == 0){	//EN message by NewerTeam
+					showSecretMessage(L"Groovy!", debugModeEN, msgCount, debugModeEN2, msgCount2);
+				}
+				if (SetGameLanguage == 1){	//JP message by wakanameko
+					showSecretMessage(L"デバッグ", debugModeJP, msgCount, debugModeJP2, msgCount2);	
+				}
+				if (SetGameLanguage == 2){	//DE message by Vadenimo
+					showSecretMessage(L"Groovig!", debugModeDE, msgCount, debugModeDE2, msgCount2);
+				}
+				if (SetGameLanguage == 3){	//IT message by Jacopo Plays
+					showSecretMessage(L"Fantastico!", debugModeIT, msgCount, debugModeIT2, msgCount2);
+				}
+				
+
 			} else {
 				const int msgCount = 6;
-				static const wchar_t *msg[msgCount] = {
+				const int msgCountDE = 7;
+				const int msgCountIT = 8;
+				//Turned off messages
+				
+				static const wchar_t *debugModeOffEN[msgCount] = {	// EN messages by NewerTeam
 					L"You've turned off the Totally",
 					L"Secret Collision Debug Mode.",
 					L"",
@@ -562,7 +829,7 @@ void dWMStarCoin_c::executeState_Wait() {
 					L"another ridiculously long",
 					L"message to go here. Sorry!",
 				};
-				static const wchar_t *hiddenMsg[] = {
+				static const wchar_t *hiddenMsgEN[] = {
 					L"If you found these messages by",
 					L"looking through strings in the DLCode",
 					L"file, then... that's kind of cheating.",
@@ -572,10 +839,100 @@ void dWMStarCoin_c::executeState_Wait() {
 					L"btw :p So why am I bothering with linebreaks anyway? I dunno. Oh well.",
 					L"Also, don't put this message on TCRF. Or do! Whatever. :(",
 				};
-				showSecretMessage(L"Groovy!", msg, msgCount, hiddenMsg, 0);
+
+				static const wchar_t *debugModeOffJP[msgCount] = {	// JP messages by wakanameko
+					L"デバッグモードがオフになり",
+					L"ました。",
+					L" ",
+					L"...あの、",
+					L"バカみてえにながいメッセー",
+					L"ジかいて、ごめんなさい!",
+				};
+				static const wchar_t *hiddenMsgJP[] = {
+					L"チート機能に関してですが、",
+					L"本来は使い方をスターコイン",
+					L"画面に表示するはずだったん",
+					L"です。しかし、",
+					L"翻訳チームに翻訳を頼むのが",
+					L"面倒になってしまい、実装さ",
+					L"れることはありませんでした。",
+					L"自分でコード読んで使い方を覚えてください。",
+				};
+
+				static const wchar_t *debugModeOffDE[msgCountDE] = {	// DE messages by Vadenimo
+					L"Du hast den total geheimen",
+					L"Kollisionsdebugmodus",
+					L"deaktiviert.",
+					L" ",
+					L"...Und nein, ich werde keine",
+					L"lange Nachricht verfassen,",
+					L"um zu verschwinden. Sorry!",
+				};
+				static const wchar_t *hiddenMsgDE[] = {
+					L"Wenn du diese Nachricht durchs Finden",
+					L"der Strings im DLCode fandest, dann...",
+					L"ist das eine Form des Cheatings.",
+					L"Auch wenn ich dasselbe machen würde,",
+					L"wenn ich ehrlich bin!",
+					L"Du wirst diese Nachricht nicht im Spiel sehen,",
+					L"btw. :p So, wieso nerve ich trotzdem",
+					L"mit Satzbrüchen? Kein Plan. Nun denn.",
+					L"Noch was, bitte bringt den Text nicht auf TCRF.",
+					L"Oder macht es doch! Was auch immer. :(",
+				};
+
+				static const wchar_t *debugModeOffIT[msgCountIT] = {	// IT messages by Jacopo Plays
+					L"Hai disattivato Totally",
+					L"Modalità debug di",
+					L"collisione segreta.",
+					L"",
+					L"... e no, non scriverò",
+					L"un altro ridicolmente lungo",
+					L"messaggio per andare qui.",
+					L"Scusa!",
+				};
+				static const wchar_t *hiddenMsgIT[] = {
+					L"Se hai trovato questi messaggi di",
+					L"guardando attraverso le stringhe nel DLCode",
+					L"file, allora... è una specie di imbroglio.",
+					L"Anche se non posso dire che non lo farei",
+					L"Stesso!",
+					L"In realtà non lo vedrai nel gioco",
+					L"btw: p Allora perché mi preoccupo comunque delle interruzioni di riga?",
+					L"Non so. Vabbè.",
+					L"Inoltre, non mettere questo messaggio su TCRF. Oppure fallo!",
+					L"Qualunque cosa. :(",
+				};
+
+				if (SetGameLanguage == 0){	//EN message by NewerTeam
+					showSecretMessage(L"Groovy!", debugModeOffEN, msgCount, hiddenMsgEN, 0);
+				}
+				if (SetGameLanguage == 1){	//JP message by wakanameko
+					showSecretMessage(L"デバッグ", debugModeOffJP, msgCount, hiddenMsgJP, 0);
+				}
+				if (SetGameLanguage == 2){	//DE message by Vadenimo
+					showSecretMessage(L"Groovig!", debugModeOffDE, msgCountDE, hiddenMsgDE, 0);
+				}
+				if (SetGameLanguage == 3){	//IT message by Jacopo Plays
+					showSecretMessage(L"Fantastico!", debugModeOffIT, msgCountIT, hiddenMsgIT, 0);
+				}
 			}
 		}
-	} else if (nowPressed & WPAD_ONE) {
+	}
+	
+	// Secret Command 
+	if (nowPressed & WPAD_PLUS) {
+		if (enableDebugMode) {
+			plusCount++;
+			if (plusCount >= 5) {
+				plusCount = 0;
+				DoSceneChange(WM_IBARA, 0, 0); //enter the Asu's sound test room. but this function is broken
+			}
+		}
+	}
+	//*/
+	
+	else if (nowPressed & WPAD_ONE) {
 		MapSoundPlayer(SoundRelatedClass, SE_SYS_DIALOGUE_OUT_AUTO, 1);
 		willExit = true;
 		state.setState(&StateID_HideSectionWait);
@@ -588,7 +945,11 @@ void dWMStarCoin_c::executeState_Wait() {
 		willExit = false;
 		state.setState(&StateID_HideSectionWait);
 	}
+
+	
 }
+
+
 void dWMStarCoin_c::endState_Wait() { }
 
 void dWMStarCoin_c::beginState_HideSectionWait() {

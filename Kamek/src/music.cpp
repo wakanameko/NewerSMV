@@ -1,6 +1,9 @@
+// this file was inspired from NSMBW-TPC. thx Asu
 #include <game.h>
 #include <sfx.h>
 #include "music.h"
+
+bool isTrailerMode;	//this func from SLLW1.1 by RedStoneMatt
 
 struct HijackedStream {
 	//const char *original;
@@ -68,17 +71,26 @@ const char* SongNameList [] = {
 	"BONUS_AREA",
 	"CHALLENGE",
 	"BOWSER_CASTLE",
+	"",					// 147
+	"",
+	"",
+	"",					// 150
 	"",
 	"",
 	"",
 	"",
-	"",
-	"",
-	"",
-	"",
-	"",
+	"",					// 155
 	"BOSS_CASTLE",
-	"BOSS_AIRSHIP",
+	"BOSS_AIRSHIP",		// 157
+	"",
+	"",
+	"TOWER_OF_SANGO",	// 160 bigin of wakanameko's custom musics
+	"LONELY_CEMETERY",
+	"CURSED_CATHEDRAL",
+	"BOSS_SMW",
+	"OLD_YUANSHEN",
+	"BOSS_SHOOTING",
+	"BOSS_GENERAL",
 	NULL	
 };
 
@@ -118,6 +130,10 @@ void FixFilesize(u32 streamNameOffset);
 u8 hijackMusicWithSongName(const char *songName, int themeID, bool hasFast, int channelCount, int trackCount, int *wantRealStreamID) {
 	Hijacker *hj = &Hijackers[channelCount==4?1:0];
 
+	if(isTrailerMode) {		//from SLLW
+		songName = "NOMUSICFORU";
+	}
+
 	// do we already have this theme in this slot?
 	// if so, don't switch streams
 	// if we do, NSMBW will think it's a different song, and restart it ...
@@ -144,6 +160,7 @@ u8 hijackMusicWithSongName(const char *songName, int themeID, bool hasFast, int 
 		OSReport("It has been set to: channel count %d, track bitfield 0x%x\n", thing[0], thing[1]);
 	}
 
+	// .er
 	sprintf(BrsarInfoOffset(stream->stringOffset), "new/%s.er", songName);
 	sprintf(BrsarInfoOffset(stream->stringOffsetFast), hasFast?"new/%s_F.er":"new/%s.er", songName);
 
@@ -187,7 +204,165 @@ extern "C" u8 after_course_getMusicForZone(u8 realThemeID) {
 		return realThemeID;
 
 	bool usesDrums = (realThemeID >= 200);
+	// OSReport("isTrailerMode = %d\n", isTrailerMode);
 	return hijackMusicWithSongName(SongNameList[realThemeID-100], realThemeID, true, usesDrums?4:2, usesDrums?2:1, 0);
 }
 
+//Custom SFX codes
+
+const char* SFXNameList [] = {
+	"original",			//1999, DON'T USE THIS ONE
+	" ",	//2000
+	" ",
+	"RUNNING_MADP",
+	"ATTACK_MADP",
+	"HIT1_MADP",
+	"HIT2_MADP",	//2005
+	"HIT3_MADP",
+	"HIT4_MADP",
+	"HIT5_MADP",
+	" ",
+	" ",	//2010
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2015
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2020
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2025
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2030
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2035
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2040
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2045
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2050
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2055
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2060
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2065
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2070
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2075
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2080
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2085
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2090
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",	//2095
+	" ",
+	" ",
+	" ",
+	" ",
+	" ",//2100
+	NULL	
+};
+
+int currentSFX = -1;
+u32 *currentPtr = 0;
+
+extern void loadFileAtIndex(u32 *filePtr, u32 fileLength, u32* whereToPatch);
+
+// static FileHandle handle;
+extern u32* GetCurrentPC();
+
+
+extern "C" u32 NewSFXTable[];
+extern "C" u32 NewSFXIndexes;
+
+void loadAllSFXs() {
+	u32 currentIdx = (u32)&NewSFXIndexes;
+
+	FileHandle handle;
+	for(int sfxIndex = 0; sfxIndex < (sizeof(SFXNameList)-1)/sizeof(SFXNameList[0]); sfxIndex++) {
+		char nameWithSound[80];
+		snprintf(nameWithSound, 79, "/Sound/new/sfx/%s.rwav", SFXNameList[sfxIndex]);
+
+		u32 filePtr = (u32)LoadFile(&handle, nameWithSound);
+
+		// OSReport("currentIdx: %p\n", currentIdx);
+		NewSFXTable[sfxIndex] = currentIdx;
+		loadFileAtIndex((u32*)filePtr, handle.length, (u32*)currentIdx);
+		currentIdx += handle.length;
+		currentIdx += (currentIdx % 0x10);
+
+		FreeFile(&handle);
+	}
+}
+
+int hijackSFX(int SFXNum) {
+	int nameIndex = SFXNum - 1999;
+	if(currentSFX == nameIndex) {
+		return 189;
+	}
+
+	currentPtr = (u32*)NewSFXTable[nameIndex];
+	currentSFX = nameIndex;
+
+	return 189;
+}
+
+static nw4r::snd::StrmSoundHandle yoshiHandle;
+
+void fuckingYoshiStuff() {
+	PlaySoundWithFunctionB4(SoundRelatedClass, &yoshiHandle, 189, 1);
+}
 

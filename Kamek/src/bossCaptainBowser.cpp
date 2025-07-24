@@ -6,9 +6,12 @@
 #include <playerAnim.h>
 #include "boss.h"
 
+// Global things
 extern "C" void *StageScreen;
-
 extern u32 GameTimer;
+bool isChildDead;
+bool isFinalBattle;
+extern bool enableDebugMode;
 
 #define time_macro *(u32*)((GameTimer) + 0x4)
 
@@ -92,6 +95,11 @@ public:
 	char isInvulnerable;
 	char isIntro;
 	int maxDamage;
+	int phase;
+	bool changingPhase;
+	bool isHide;
+	bool isHidingNow;
+	bool isAppearingNow;
 	int playerCount;
 	float roarLen;
 
@@ -103,6 +111,8 @@ public:
 	float sinTimerX;
 	float sinTimerY;
 	bool sinTimerXRunning, sinTimerYRunning, stopMoving;
+	float timerMoving;
+	float timerMoving2;
 
 	bool shipAnmFinished;
 	float explosionBottomBound;
@@ -119,6 +129,8 @@ public:
 
 	int saveTimer;
 	bool exitedFlag;
+	bool doInitPos;
+	bool shitamawatta;
 
 	static daCaptainBowser *build();
 
@@ -127,6 +139,7 @@ public:
 	void spriteCollision(ActivePhysics *apThis, ActivePhysics *apOther);
 	void playerCollision(ActivePhysics *apThis, ActivePhysics *apOther);
 	bool collisionCat13_Hammer(ActivePhysics *apThis, ActivePhysics *apOther);
+	bool collisionCat3_StarPower(ActivePhysics *apThis, ActivePhysics *apOther);
 
 	void addScoreWhenHit(void *other);
 
@@ -136,6 +149,8 @@ public:
 	DECLARE_STATE(Fire);
 
 	DECLARE_STATE(Roar);
+	DECLARE_STATE(SpawnChild);
+	DECLARE_STATE(Appear);
 	DECLARE_STATE(Damage);
 
 	DECLARE_STATE(Intro);
@@ -153,13 +168,13 @@ daCaptainBowser *daCaptainBowser::build() {
 ///////////////////////
 // Externs and States
 ///////////////////////
-
-
 	CREATE_STATE(daCaptainBowser, Wait);
 	CREATE_STATE(daCaptainBowser, Throw);
 	CREATE_STATE(daCaptainBowser, Fire);
 
 	CREATE_STATE(daCaptainBowser, Roar);
+	CREATE_STATE(daCaptainBowser, SpawnChild);
+	CREATE_STATE(daCaptainBowser, Appear);
 	CREATE_STATE(daCaptainBowser, Damage);
 
 	CREATE_STATE(daCaptainBowser, Intro);
@@ -168,12 +183,15 @@ daCaptainBowser *daCaptainBowser::build() {
 	CREATE_STATE(daCaptainBowser, PanToExit);
 
 
-
 ////////////////////////
 // Collision Functions
 ////////////////////////
-void daCaptainBowser::addScoreWhenHit(void *other) { };
+void daCaptainBowser::addScoreWhenHit(void *other){};
 
+bool daCaptainBowser::collisionCat3_StarPower(ActivePhysics *apThis, ActivePhysics *apOther) {
+	//this->damage = -1;
+	initiateDeathSequence();
+}
 bool daCaptainBowser::collisionCat13_Hammer(ActivePhysics *apThis, ActivePhysics *apOther) {
 	apOther->owner->kill();
 	S16Vec nullRot = {0,0,0};
@@ -198,7 +216,8 @@ void daCaptainBowser::spriteCollision(ActivePhysics *apThis, ActivePhysics *apOt
 		PlaySound(apOther->owner, SE_BOSS_CMN_STOMPED);
 		apOther->owner->Delete(1);
 
-		if (this->damage == this->maxDamage/2) 	{ doStateChange(&StateID_Roar); }
+		if (this->damage == (this->maxDamage / 3) * 2 ||
+			this->damage == this->maxDamage / 3){ doStateChange(&StateID_Roar); }	// equal 12 or 24 
 		else if (this->damage < 0)  			{ initiateDeathSequence(); }
 		else 									{ doStateChange(&StateID_Damage); }
 	}
@@ -225,6 +244,8 @@ int daCaptainBowser::onCreate() {
 	shipRotY = 0x4000;
 	sinTimerXRunning = true;
 	sinTimerYRunning = true;
+	this->timerMoving = 0.0;
+	this->timerMoving2 = 0.0;
 
 	// Model creation
 	allocator.link(-1, GameHeaps[0], 0, 0x20);
@@ -270,12 +291,21 @@ int daCaptainBowser::onCreate() {
 
 	// Prep the goods
 	this->playerCount = GetActivePlayerCount();
-	this->maxDamage = 24;
+	this->maxDamage = 36;
+	this->phase = 0;
+	this->changingPhase = false;
+	this->isHide = false;
+	this->isHidingNow = false;
+	this->isAppearingNow = false;
+	isChildDead = false;
+	isFinalBattle = true;
 
 	pos.z = 8000.0;
 	this->scale = (Vec){0.57, 0.57, 0.57};
 
-	this->damage = this->maxDamage;
+	if(!enableDebugMode){ this->damage = this->maxDamage; }
+	else				{ this->damage = 0; }
+	
 	static const float scX1[] = {-176.447600, 64.340078, -157.925471, -157.925471, -158.561530, 49.742932, 48.957043};
 	static const float scY1[] = {128.217300, 86.427956, 54.136191, -36.090801, 22.765115, 162.568398, 66.849169};
 	static const float scX2[] = {-96.022566, 150.126781, 173.523155, 81.887358, -50.343171, 84.419332, 117.889270};
@@ -359,16 +389,53 @@ int daCaptainBowser::onExecute() {
 	float ymod = sin(this->sinTimerY * 3.14 / 130.0) * (sinTimerYRunning ? 84.0 : 10.0);
 
 	if(this->isIntro == 0) {
-		pos.x = ClassWithCameraInfo::instance->screenCentreX + 200.0 + xmod;
-		pos.y = ClassWithCameraInfo::instance->screenCentreY - 180.0 + ymod;
+		if(this->isHidingNow){	// Normal + moving right
+			pos.x = ClassWithCameraInfo::instance->screenCentreX + 200.0 + xmod + this->timerMoving;
+			sinTimerX++;
+			if (this->timerMoving <= 2.5){
+				this->timerMoving += 1.0;
+			}
+			else{ this->timerMoving += 2.5; }
+			
+			if (sinTimerX >= 360) {
+				sinTimerX = 0;
+				if (stopMoving)
+					sinTimerXRunning = false;
+			}
+		}
+		else if (this->isAppearingNow){	// Normal + moving left
+			pos.x = ClassWithCameraInfo::instance->screenCentreX + 650.0 + xmod + this->timerMoving;
 
-		sinTimerX++;
-		if (sinTimerX >= 360) {
-			sinTimerX = 0;
-			if (stopMoving)
-				sinTimerXRunning = false;
+			sinTimerX++;
+			/*if (this->timerMoving2 <= -400.0){
+				this->timerMoving -= 2.5 + (400.0 + this->timerMoving2);
+			}
+			else{*/
+				this->timerMoving -= 1.965;
+			//}
+			
+			if (sinTimerX >= 360) {
+				sinTimerX = 0;
+				if (stopMoving)
+					sinTimerXRunning = false;
+			}
+		}
+		else{	// Normal
+			pos.x = ClassWithCameraInfo::instance->screenCentreX + 200.0 + xmod;
+			sinTimerX++;
+			this->timerMoving = 0;
+			if (sinTimerX >= 360) {
+				sinTimerX = 0;
+				if (stopMoving)
+					sinTimerXRunning = false;
+			}
+		}
+		if (this->isHide){	// 画面外のRightにHide
+			pos.x = ClassWithCameraInfo::instance->screenCentreX + 1200.0 + xmod;
+			this->timerMoving = 0;
 		}
 
+		pos.y = ClassWithCameraInfo::instance->screenCentreY - 180.0 + ymod;
 		sinTimerY++;
 		if (sinTimerY >= 260) {
 			sinTimerY = 0;
@@ -510,7 +577,12 @@ int daCaptainBowser::onDraw() {
 			bindAnimChr_and_setUpdateRate("kp_wait", 1, 0.0, 1.5);
 		}
 		else {
-			bindAnimChr_and_setUpdateRate("kp_wait", 1, 0.0, 2.0);
+			if (this->phase == 2){
+				bindAnimChr_and_setUpdateRate("kp_wait", 1, 0.0, 2.5);
+			}
+			else{
+				bindAnimChr_and_setUpdateRate("kp_wait", 1, 0.0, 2.0);
+			}
 		}
 	}
 	void daCaptainBowser::executeState_Wait() {
@@ -518,13 +590,17 @@ int daCaptainBowser::onDraw() {
 	if (this->chrAnimation.isAnimationDone()) {
 		this->chrAnimation.setCurrentFrame(0.0);
 
-		int num = GenerateRandomNumber(4);
-
-		if (num == 0) {
+		if (phase == 0){	// 最初(phase0)は火だけ
 			doStateChange(&StateID_Fire);
 		}
-		else{
-			doStateChange(&StateID_Throw);
+		else{				// phase1以降は投げも追加
+			int num = GenerateRandomNumber(4);
+			if (num == 0) {
+				doStateChange(&StateID_Fire);
+			}
+			else{
+				doStateChange(&StateID_Throw);
+			}
 		}
 	}
 
@@ -585,10 +661,11 @@ int daCaptainBowser::onDraw() {
 
 		if (this->chrAnimation.isAnimationDone()) {
 			this->chrAnimation.setCurrentFrame(0.0);
-			if (this->isAngry == 1) {
-				if (this->timer == 1) {
-					doStateChange(&StateID_Wait);
-				}
+			if (this->phase == 1) {
+				if (this->timer == 1){ doStateChange(&StateID_Wait); }
+			}
+			else if (this->phase >= 2){
+				if (this->timer >= 2){ doStateChange(&StateID_Wait); }
 			}
 			else {
 				doStateChange(&StateID_Wait);
@@ -605,34 +682,117 @@ int daCaptainBowser::onDraw() {
 //////////////////
 // State Roar
 //////////////////
-	void daCaptainBowser::beginState_Roar() {
-		bindAnimChr_and_setUpdateRate("kp_roar3", 1, 0.0, 1.0);
-		this->isInvulnerable = 1;
-		this->timer = 0;
+void daCaptainBowser::beginState_Roar() {
+	bindAnimChr_and_setUpdateRate("kp_roar3", 1, 0.0, 1.0);
+	this->isInvulnerable = 1;
+	this->timer = 0;
+	this->phase += 1;
+	this->changingPhase = true;
+	this->isHidingNow = false;
+}
+void daCaptainBowser::executeState_Roar() {
+	ClassWithCameraInfo *cwci = ClassWithCameraInfo::instance;
+
+	if (this->chrAnimation.getCurrentFrame() == 53.0) { // This is where the smackdown starts
+		nw4r::snd::SoundHandle handle;
+		PlaySoundWithFunctionB4(SoundRelatedClass, &handle, SE_VOC_KP_L_SHOUT, 1);
 	}
-	void daCaptainBowser::executeState_Roar() {
 
-		if (this->chrAnimation.getCurrentFrame() == 53.0) { // This is where the smackdown starts
-			nw4r::snd::SoundHandle handle;
-			PlaySoundWithFunctionB4(SoundRelatedClass, &handle, SE_VOC_KP_L_SHOUT, 1);
+	if (this->chrAnimation.getCurrentFrame() > 53.0) { // This is where the smackdown starts
+		// GFX
+		Vec efPos = {pos.x-174.0f, pos.y+140.0f, pos.z};
+		S16Vec efRot = {0,0,0x7000};
+		Vec oneVec = {1.0f, 1.0f, 1.0f};
+		effect.spawn("Wm_ko_shout", 0, &efPos, &efRot, &oneVec);
+
+		// Position
+		if(!deathSequenceRunning){
+			// pos.x += 2.5;	// 同様の処理をonExecuteに移設しました。以下は設定用のフラグです。
+			this->isHidingNow = true;
 		}
-
-		if (this->chrAnimation.getCurrentFrame() > 53.0) { // This is where the smackdown starts
-			Vec efPos = {pos.x-174.0f, pos.y+140.0f, pos.z};
-			S16Vec efRot = {0,0,0x7000};
-			Vec oneVec = {1.0f, 1.0f, 1.0f};
-			effect.spawn("Wm_ko_shout", 0, &efPos, &efRot, &oneVec);
-		}
-
-		if (this->chrAnimation.isAnimationDone()) {
-			doStateChange(deathSequenceRunning ? &StateID_FinalAttack : &StateID_Wait);
-		}
-
 	}
-	void daCaptainBowser::endState_Roar() {
-		this->isInvulnerable = 0;
-		this->isAngry = 1;
+
+	if (this->chrAnimation.isAnimationDone()) {
+		if (deathSequenceRunning) {
+			doStateChange(&StateID_FinalAttack);
+		}
+		else {doStateChange(&StateID_SpawnChild); }
 	}
+
+}
+void daCaptainBowser::endState_Roar() {
+	this->isAngry = 1;
+	this->isHidingNow = false;
+}
+	
+
+//////////////////
+// State SpawnChild
+//////////////////
+void daCaptainBowser::beginState_SpawnChild(){
+	this->timer = 0;
+	isChildDead = false;
+	this->isHide = true;
+}
+void daCaptainBowser::executeState_SpawnChild(){
+	ClassWithCameraInfo *cwci = ClassWithCameraInfo::instance;
+
+	// 小ボスを召喚
+	if (this->timer == 0){
+		if (this->phase == 1){
+			CreateActor(BossChildSM, 0x0, (Vec){pos.x + bowserX, cwci->screenCentreY, pos.z}, 0, 0);
+		}
+		else{
+			CreateActor(BossChildSM, 0x1, (Vec){pos.x + bowserX, cwci->screenCentreY, pos.z}, 0, 0);
+		}
+		this->timer += 1;
+	}
+	else if (isChildDead == true){
+		isChildDead = false;
+		doStateChange(&StateID_Appear);
+	}
+}
+void daCaptainBowser::endState_SpawnChild(){
+	this->isHide = false;
+}
+
+//////////////////
+// State Appear
+//////////////////
+void daCaptainBowser::beginState_Appear(){
+	bindAnimChr_and_setUpdateRate("kp_roar3", 1, 0.0, 1.0);
+	this->timer = 0;
+	this->isAppearingNow = true;
+	this->isHide = false;
+	this->timerMoving2 = 0.0;
+}
+void daCaptainBowser::executeState_Appear(){
+	ClassWithCameraInfo *cwci = ClassWithCameraInfo::instance;
+
+	if (this->chrAnimation.getCurrentFrame() == 53.0) { // This is where the smackdown starts
+		nw4r::snd::SoundHandle handle;
+		PlaySoundWithFunctionB4(SoundRelatedClass, &handle, SE_VOC_KP_L_SHOUT, 1);
+	}
+
+	if (this->chrAnimation.getCurrentFrame() > 53.0) { // This is where the smackdown starts
+		// GFX
+		Vec efPos = {pos.x-174.0f, pos.y+140.0f, pos.z};
+		S16Vec efRot = {0,0,0x7000};
+		Vec oneVec = {1.0f, 1.0f, 1.0f};
+		effect.spawn("Wm_ko_shout", 0, &efPos, &efRot, &oneVec);
+	}
+
+	if (this->chrAnimation.isAnimationDone()) {
+		doStateChange(&StateID_Wait);
+	}
+}
+void daCaptainBowser::endState_Appear(){
+	this->changingPhase = false;
+	this->isInvulnerable = false;
+	this->isAppearingNow = false;
+	this->doInitPos = false;
+	this->shitamawatta = false;
+}
 
 
 

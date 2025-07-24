@@ -286,7 +286,7 @@ int daMrSun_c::onExecute() {
 			doStateChange(&StateID_DieFall);
 		}
 	}
-		
+
 	return true;
 }
 
@@ -477,8 +477,7 @@ void daMrSun_c::beginState_Spit() {
 	this->spinStateOn = 1;
 
 }
-void daMrSun_c::executeState_Spit() { 
-	
+void daMrSun_c::executeState_Spit() {
 	if (this->timer == 10) {
 
 		PlaySound(this, 431);

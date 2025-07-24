@@ -1,0 +1,21 @@
+---
+#This file from TPC and this function was made by Asu-chan
+#Original replaces Actor 568 TARZAN_ROPE (Sprite 210)
+#Replaces Actor 624 WM_IBARA
+
+source_files: [../src/soundtest.S, ../src/soundtest.cpp] # Based on cutScene.yaml/cpp/h from NewerSMBW
+hooks: 
+  - name: BuildCutScene
+    type: add_func_pointer
+    src_addr_pal: 0x80987F5C
+    target_func: 'dScSoundTest_c::build()'
+
+  - name: gameInfinitLoopFix  # By ReaZ0n23
+    type: patch
+    addr_pal: 0x80069718
+    data: '6000 0000' # orig: 4800 0000
+
+#  - name: BuildCutScene
+#    type: add_func_pointer
+#    src_addr_pal: 0x8097CFC8
+#    target_func: 'dScSoundTest_c::build()'

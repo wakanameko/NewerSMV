@@ -1,0 +1,12 @@
+---
+source_files:
+  - ../src/smw_glowThrow.S
+
+hooks:
+  # daLightBlock_c
+  - name: ThrowThatGlow
+    type: branch_insn
+    branch_type: bl
+    # src_addr_pal: 0x808566A8
+    src_addr_pal: 0x808566b4
+    target_func: 'GlowThrowUp'

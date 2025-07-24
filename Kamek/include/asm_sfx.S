@@ -1,0 +1,7 @@
+#define RUNNING_MADP 2002
+#define ATTACK_MADP 2003
+#define HIT1_MADP 2004
+#define HIT2_MADP 2005
+#define HIT3_MADP 2006
+#define HIT4_MADP 2007
+#define HIT5_MADP 2008

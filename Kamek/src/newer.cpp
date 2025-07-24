@@ -1,5 +1,6 @@
 #include <game.h>
 #include <newer.h>
+#include <gameLanguage.h>
 #include "levelinfo.h"
 
 int lastLevelIDs[] = {
@@ -47,8 +48,65 @@ extern "C" void YoshiStateWrapper(daPlBase_c *_this, dStateBase_c *state, void *
 }
 */
 
+const wchar_t *worldnamesEN[] = {	// EN world names by wakanameko
+	L"First Island",
+	L"Sunlight Canyon",
+	L"Moonlight Ground",
+	L"SunMoon Terminus"
+};
+const wchar_t *worldnamesJP[] = {	// JP world names by wakanameko
+	L"はじまりのしま",
+	L"ひでりのおか",
+	L"げっこうのだいち",
+	L"たびのしゅうちゃくてん"
+};
+const wchar_t *worldnamesDE[] = {	// DE world names by Vadenimo
+	L"Beginnerinsel",
+	L"Sonnenlichtschlucht",
+	L"Mondlichtebene",
+	L"Erdschattenendstation",
+};
+const wchar_t *worldnamesIT[] = {	// IT world names by Jacopo Plays
+	L"Prima Isola",
+	L"Canyon Luce Solare",
+	L"Terra Chiaro Di Luna",
+	L"Capolinea SoleLuna"
+};
 
-void WriteAsciiToTextBox(nw4r::lyt::TextBox *tb, const char *source) {
+
+// from SLLW
+void WriteJPWorldNameToTextBox(nw4r::lyt::TextBox *tb, int world) {
+	if (SetGameLanguage == 0){
+		tb->SetString(worldnamesEN[world]);
+	}
+	if (SetGameLanguage == 1){
+		tb->SetString(worldnamesJP[world]);
+	}
+	if (SetGameLanguage == 2){
+		tb->SetString(worldnamesDE[world]);
+	}
+	if (SetGameLanguage == 3){
+		tb->SetString(worldnamesIT[world]);
+	}
+}
+
+void GetJapaneseWorldName(wchar_t *output, int world) {
+	if (SetGameLanguage == 0){
+		wcscpy(output, worldnamesEN[world]);
+	}
+	if (SetGameLanguage == 1){
+		wcscpy(output, worldnamesJP[world]);
+	}
+	if (SetGameLanguage == 2){
+		wcscpy(output, worldnamesDE[world]);
+	}
+	if (SetGameLanguage == 3){
+		wcscpy(output, worldnamesIT[world]);
+	}
+}
+
+// edited by wakanameko base txt is here: void WriteAsciiToTextBox(nw4r::lyt::TextBox *tb, const wchar_t *source) {
+void WriteAsciiToTextBox(nw4r::lyt::TextBox *tb, const wchar_t *source) {
 	int i = 0;
 	wchar_t buffer[1024];
 	while (i < 1023 && source[i]) {
@@ -60,6 +118,10 @@ void WriteAsciiToTextBox(nw4r::lyt::TextBox *tb, const char *source) {
 	tb->SetString(buffer);
 }
 
+// 3lines from SLLW
+void WriteWorldNameToTextBox(nw4r::lyt::TextBox *tb, int world) {
+	WriteJPWorldNameToTextBox(tb, world-1);
+}
 
 void getNewerLevelNumberString(int world, int level, wchar_t *dest) {
 	static const wchar_t *numberKinds[] = {

@@ -39,6 +39,13 @@ int getPressedDir(int buttons) {
 	return -1;
 }
 
+SFX pathManagerPlayerSFX[4][9] = {
+	{ SE_VOC_MA_CS_COURSE_MISS, SE_VOC_MA_CS_JUMP, SE_VOC_MA_CLEAR_MULTI, SE_VOC_MA_CANNON_SHOT, SE_VOC_MA_PNGN_SLIDE, SE_VOC_MA_CS_JUMP, SE_VOC_MA_CS_COURSE_IN },
+	{ SE_VOC_LU_CS_COURSE_MISS, SE_VOC_LU_CS_JUMP, SE_VOC_LU_CLEAR_MULTI, SE_VOC_LU_CANNON_SHOT, SE_VOC_LU_PNGN_SLIDE, SE_VOC_LU_CS_JUMP, SE_VOC_LU_CS_COURSE_IN_MULTI },
+	{ SE_VOC_KO_CS_COURSE_MISS, SE_VOC_KO_CS_JUMP, SE_VOC_KO_CLEAR_MULTI, SE_VOC_KO_CANNON_SHOT, SE_VOC_KO_PNGN_SLIDE, SE_VOC_KO_CS_JUMP, SE_VOC_KO_CS_COURSE_IN_MULTI },
+	{ SE_VOC_KO2_CS_COURSE_MISS, SE_VOC_KO2_CS_JUMP, SE_VOC_KO2_CLEAR_MULTI, SE_VOC_KO2_CANNON_SHOT, SE_VOC_KO2_PNGN_SLIDE, SE_VOC_KO2_CS_JUMP, SE_VOC_KO2_CS_COURSE_IN_MULTI }
+};
+
 void dWMPathManager_c::setup() {
 	dScKoopatlas_c *wm = dScKoopatlas_c::instance;
 
@@ -748,7 +755,7 @@ void dWMPathManager_c::execute() {
 				waitAfterInitialPlayerAnim = 60;
 
 				nw4r::snd::SoundHandle something;
-				PlaySoundWithFunctionB4(SoundRelatedClass, &something, SE_VOC_MA_CS_COURSE_MISS, 1);
+				PlaySoundWithFunctionB4(SoundRelatedClass, &something, pathManagerPlayerSFX[Player_ID[0]][0], 1); // SE_VOC_MA_CS_COURSE_MISS
 			} else if (mustPlayAfterWinAnim) {
 				daWMPlayer_c::instance->visible = true;
 				if (dScKoopatlas_c::instance->isAfter8Castle) {
@@ -759,7 +766,7 @@ void dWMPathManager_c::execute() {
 
 					nw4r::snd::SoundHandle something;
 					if (!wm->isEndingScene)
-						PlaySoundWithFunctionB4(SoundRelatedClass, &something, SE_VOC_MA_CS_JUMP, 1);
+						PlaySoundWithFunctionB4(SoundRelatedClass, &something, pathManagerPlayerSFX[Player_ID[0]][1], 1); // SE_VOC_MA_CS_JUMP
 				}
 			}
 		}
@@ -874,7 +881,7 @@ void dWMPathManager_c::execute() {
 		dmGladDuration--;
 		if (dmGladDuration == 60) {
 			nw4r::snd::SoundHandle something;
-			PlaySoundWithFunctionB4(SoundRelatedClass, &something, SE_VOC_MA_CLEAR_MULTI, 1);
+			PlaySoundWithFunctionB4(SoundRelatedClass, &something, pathManagerPlayerSFX[Player_ID[0]][2], 1); // SE_VOC_MA_CLEAR_MULTI
 		} else if (dmGladDuration == 0) {
 			daWMPlayer_c::instance->startAnimation(wait_select, 1.0f, 0.0f, 0.0f);
 		}
@@ -943,7 +950,7 @@ void dWMPathManager_c::execute() {
 		static const int endLevels[11][3] = {
 			{1, 38, 1}, // W1 right
 			{2, 38, 2}, // W2 up
-			{3, 38, 0}, // W3 left
+			{3, 38, 1}, // W3 right (orig:left)
 			{4, 38, 1}, // W4 right
 			{5, 38, 1}, // W5 right
 			{6, 38, 2}, // W6 up
@@ -1064,7 +1071,7 @@ void dWMPathManager_c::startMovementTo(dKPPath_s *path) {
 		{jump,1.0f,10.0f, -1,2.5f, SE_NULL,SE_PLY_JUMP, 0,0},
 
 		// Jump water (actually cannon)
-		{dm_notice,1.0f,10.0f, -1,-1.0f, SE_NULL,SE_VOC_MA_CANNON_SHOT, 0,0},
+		{dm_notice,1.0f,10.0f, -1,-1.0f, SE_NULL,pathManagerPlayerSFX[Player_ID[0]][3], 0,0}, // SE_VOC_MA_CANNON_SHOT
 
 		// Ladder up, left, right
 		{pea_plant,1.2f,10.0f, -0x7FFF,1.5f, SE_PLY_FOOTNOTE_CS_ROCK_CLIMB,SE_NULL, 0,0},
@@ -1089,7 +1096,7 @@ void dWMPathManager_c::startMovementTo(dKPPath_s *path) {
 		{run,1.0f,10.0f, -1,1.0f, SE_NULL,SE_NULL, 0,0},
 
 		// Cannon 2
-		{dm_noti_wait,1.0f,10.0f, -1,-1.0f, SE_NULL,SE_VOC_MA_CANNON_SHOT, 0,0},
+		{dm_noti_wait,1.0f,10.0f, -1,-1.0f, SE_NULL,pathManagerPlayerSFX[Player_ID[0]][3], 0,0}, // SE_VOC_MA_CANNON_SHOT
 
 		// Invisible, this is handled specially
 		{wait,2.0f,10.0f, -1,1.0f, SE_NULL,SE_NULL, 0,0},
@@ -1177,7 +1184,7 @@ void dWMPathManager_c::startMovementTo(dKPPath_s *path) {
 			if (!swimming) {
 				nw4r::snd::SoundHandle something;
 				if (firstPathDone)
-					PlaySoundWithFunctionB4(SoundRelatedClass, &something, SE_VOC_MA_PNGN_SLIDE, 1);
+					PlaySoundWithFunctionB4(SoundRelatedClass, &something, pathManagerPlayerSFX[Player_ID[0]][4], 1); // SE_VOC_MA_PNGN_SLIDE
 				PlaySoundWithFunctionB4(SoundRelatedClass, &penguinSlideSound, SE_EMY_PENGUIN_SLIDE, 1);
 			}
 			player->hasSound = false;
@@ -1199,7 +1206,7 @@ void dWMPathManager_c::startMovementTo(dKPPath_s *path) {
 
 			if (Animations[id].initialSound == SE_PLY_JUMP) {
 				nw4r::snd::SoundHandle something2;
-				PlaySoundWithFunctionB4(SoundRelatedClass, &something2, SE_VOC_MA_CS_JUMP, 1);
+				PlaySoundWithFunctionB4(SoundRelatedClass, &something2, pathManagerPlayerSFX[Player_ID[0]][5], 1); // SE_VOC_MA_CS_JUMP
 				something2.SetPitch(player->modelHandler->mdlClass->powerup_id == 3 ? 1.5f : 1.0f);
 			}
 		}
@@ -1549,8 +1556,10 @@ void dWMPathManager_c::activatePoint() {
 		PlaySoundWithFunctionB4(SoundRelatedClass, &something, SE_SYS_GAME_START, 1);
 
 		nw4r::snd::SoundHandle something2;
-		PlaySoundWithFunctionB4(SoundRelatedClass, &something2, (Player_Powerup[0] == 3) ? SE_VOC_MA_PLAYER_DECIDE_MAME: SE_VOC_MA_CS_COURSE_IN, 1);
-
+		PlaySoundWithFunctionB4(SoundRelatedClass, &something2, pathManagerPlayerSFX[Player_ID[0]][6], 1); // SE_VOC_MA_CS_COURSE_IN
+		if(Player_Powerup[Player_ID[0]] == 3)
+			something2.SetPitch(1.5f);
+			
 		daWMPlayer_c::instance->startAnimation(course_in, 1.2, 10.0, 0.0);
 		daWMPlayer_c::instance->setTargetRotY(0);
 
