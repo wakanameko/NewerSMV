@@ -1,7 +1,18 @@
-# NEWER Super Mario Bros. Wii
+# NEWER Sun Moon Vacation
 ## Source Code Public Release
+This is the source code of the Newer Sun Moon Vacation mod, which you can download by clicking right here.
 
-## NOTE: This version is now deprecated and out-of-date. Please use the cw branch if you are able to.
+The source code of this mod is based off of the Newer Super Mario Bros. Wii source code, hence why this repo is a fork of it.
+
+### Version 1.0
+This commit contains the source code of the version 1.0 of this game, which is NOT made for modding, as it contains tons of hardcoded things for translation.
+
+But, this source has many my ASM hacks. May be it can help you to make your own sprite, utility, and patches.  
+Also, this mod has many custom sprites made by various modders. So please credit correct name of authors when you use them.  
+
+That's all, have a nice day !
+
+(You can find the original README wrote by Treeki down below.)
 
 ### Preamble
 
