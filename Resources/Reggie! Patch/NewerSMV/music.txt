@@ -1,0 +1,86 @@
+0:None
+1:World Map Drums
+2:World Map Drums
+3:Underwater [NSMBW]
+4:Mushrooms/Athletic [NSMBW]
+5:Ghost House [NSMBW]
+6:Pyramids [NSMBW]
+7:Snow [NSMBW]
+8:Lava [NSMBW]
+9:Opening Cutscene
+10:Castle [NSMBW]
+11:Airship [NSMBW]
+12:Bonus Area [NSMBW]
+13:Drum Rolls [NSMBW]
+14:Tower Boss
+15:Castle Boss [NSMBW]
+16:Toad House [NSMBW]
+17:Airship Boss [NSMBW]
+18:Forest [NSMBW]
+19:Enemy Ambush [NSMBW]
+20:Beach [NSMBW]
+21:Lava Cave [NSMBW]
+22:Peach's Castle [NSMBW]
+23:Credits Jazz
+24:Airship Drums [NSMBW]
+25:Bowser Bridge
+26:Mega Bowser [NSMBW]
+27:Epilogue [NSMBW]
+100:Airship
+101:Tower Boss
+102:Menu
+103:Underwater | Beach Theme Underwater Inside (Super Mario 3D Land)
+104:Mushrooms/Athletic
+105:Castle
+106:Main
+107:Oasis | Streamworks (Saliva Island) (Shantae and the Pirate's Curse)
+108:Tower
+109:Underground
+110:Desert | Exploring the Temple of Shrooms (Paper Mario The Origami King)
+111:Fire
+112:Forest | Forest / Nature Area (Kirby The Amazing Mirror) | wakanameko Remix
+113:SunLight Canyon Castle(Fortress) | Chinese Tea (the Embodiment of Scarlet Devil.) | wakanameko Remix
+114:Japan
+115:Pumpkin
+116:Sewer
+117:Space
+118:Bowser
+119:Bonus
+120:Ambush
+121:Bridge Drums
+122:Snow
+123:Mini-Mega
+124:Cliffs
+125:Forest (Dark) | Forest Stage (Kirby's Adventure)
+126:Crystal Caves
+127:Graveyard
+128:Ghost House
+129:Jungle
+130:Tropical
+131:Sky City
+132:Snow (2)
+133:Star Haven
+134:Singalong
+135:Factory
+136:Tank | Old World (Touhou Imperishable Night.) | wakanameko Remix
+137:Pyramid | Snif City (Paper Mario The Origami King)
+138:Yoshi House
+139:Factory (2)
+140:Cavern
+141:Sand
+142:Mini Boss Battle | Rude Buster (DELTARUNE)
+143:Minigame
+144:Bonus Area
+145:Challenge
+146:Bowser's Castle
+156:Castle Boss
+157:Airship Boss
+158:
+159:
+160:TOWER_OF_SANGO | coral tower (The Children of the Sea and the Devil)
+161:LONELY_CEMETERY | Let's Live in a Lovely Cemetery (Touhou Divine Spirit Mausoleum ~ Ten Desires) | wakanameko Remix
+162:CURSED_CATHEDRAL | Cursed Cathedral (RednGreen) | wakanameko Remix
+163:BOSS_SMW | Tower Boss (New Super Mario Bros. 2)
+164:MoonLight Ground Boss Fight | OLD YUANSHEN (Ten Desires.) | wakanameko Remix
+165:BOSS_SHOOTING | The Girls Who Fought the Darkness (Kirby Star Allies)
+166:BOSS_GENERAL | Boss (Kirby 64 The Crystal Shards) | wakanameko Remix

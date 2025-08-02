@@ -1,0 +1,125 @@
+<?xml version="1.0"?>
+<levels>
+
+	<category name="World 1">
+		<category name="FirstIsland"> <!-- ENG -->>
+			<level file="01-01" name="World 1-1: Switches Moving Land" />
+			<level file="01-02" name="World 1-2: Twilight Filtering Trees" />
+			<level file="01-03" name="World 1-3: Twilight Filtering Trees" />
+		</category>
+		<category name="はじまりのしま"> <!-- JPN -->>
+			<level file="01-01" name="World 1-1: スイッチと どくぬまの もり" />
+			<level file="01-02" name="World 1-2: ゆうぐれどきの こもれび" />
+			<level file="01-03" name="World 1-3: およげ!ジメジメしっちたい" />
+		</category>
+		<category name="Anfangsinsel"> <!-- DEU -->>
+			<level file="01-01" name="World 1-1: Schwingende Schalter" />
+			<level file="01-02" name="World 1-2: Baumdämmerungsfilter" />
+			<level file="01-03" name="World 1-3: Nässriges Feuchtgebiet" />
+		</category>
+		<category name="Prima Isola"> <!-- ITA -->>
+			<level file="01-01" name="World 1-1: Terra Degli Interruttori" />
+			<level file="01-02" name="World 1-2: Alberi Crepuscolari" />
+			<level file="01-03" name="World 1-3: Terrebagnate Allagate" />
+		</category>
+	</category>
+
+	<category name="World 2">
+		<category name="Sunlight Canyon">
+			<level file="02-01" name="World 2-1: Blowing Sand Palace" />
+			<level file="02-25" name="World 2-Castle: Infiltration Pyramid" />
+			<level file="02-03" name="World 2-2: Dive in! Desert Oasis" />
+			<level file="02-04" name="YellowSwitch: Yellow Switch Fortress" />
+			<level file="02-34" name="MusicHouse: Desert Music House" />
+		</category>
+		<category name="ひでりのおか">
+			<level file="02-01" name="World 2-1: ふきでるすなの きゅうでん" />
+			<level file="02-25" name="World 2-城: せんにゅう ピラミッド" />
+			<level file="02-03" name="World 2-2: とびこめ!さばくのオアシス" />
+			<level file="02-04" name="黄色スイッチ: きいろスイッチの とりで" />
+			<level file="02-34" name="ミュージックハウス: さばくの ミュージックハウス" />
+		</category>
+		<category name="Sonnenlichtschlucht">
+			<level file="02-01" name="World 2-1: Sandstrahlenschloss" />
+			<level file="02-25" name="World 2-Castle: Pyramiden-Infiltration" />
+			<level file="02-03" name="World 2-2: Tauche in die Wüstenoase!" />
+			<level file="02-04" name="YellowSwitch: Gelber Schalterpalast" />
+			<level file="02-34" name="MusicHouse: Wüstenmusikhaus" />
+		</category>
+		<category name="Sonnenlichtschlucht">
+			<level file="02-01" name="World 2-1: Palazzo Della Sabbia" />
+			<level file="02-25" name="World 2-Castle: Infiltrazione Piramidale" />
+			<level file="02-03" name="World 2-2: Oasi Del Deserto" />
+			<level file="02-04" name="YellowSwitch: Fortezza Gialla" />
+			<level file="02-34" name="MusicHouse: Casa Musicale" />
+		</category>
+	</category>
+
+	<category name="World 3">
+		<category name="Moonlight Ground">
+			<level file="03-01" name="World 3-1: Blowing Sand Palace" />
+			<level file="03-02" name="World 3-2: Pumpkin's Yard" />
+			<level file="03-25" name="World 3-Castle: " />
+			<level file="03-38" name="World 3-AirShip: " />
+			<level file="03-04" name="BlueSwitch: Blue Switch Fortress" />
+			<level file="03-33" name="BonusHouse: Item Bowling" />
+		</category>
+		<category name="げっこうのだいち">
+			<level file="03-01" name="World 3-1: いてついた ちていこ" />
+			<level file="03-02" name="World 3-2: かぼちゃの ぐんせいち" />
+			<level file="03-25" name="World 3-Castle: オバケがひそむ おしろ" />
+			<level file="03-38" name="World 3-AirShip: しずかな ちんぼつせん" />
+			<level file="03-04" name="青スイッチ: あおスイッチの とりで" />
+			<level file="03-33" name="キノピオの家: アイテムボーリング" />
+		</category>
+		<category name="Mondlichtebene">
+			<level file="03-01" name="World 3-1: Gefrorene Kalksteinhöhle" />
+			<level file="03-02" name="World 3-2: Kürbishofgarten" />
+			<level file="03-25" name="World 3-Castle: " />
+			<level file="03-38" name="World 3-AirShip: Ruhige Dickens'sche Linie" />
+			<level file="03-04" name="BlueSwitch: Blauer Schalterpalast" />
+			<level file="03-33" name="BonusHouse: " />
+		</category>
+		<category name="Terra Chiaro Di Luna">
+			<level file="03-01" name="World 3-1: La Grotta Ghiacciata" />
+			<level file="03-02" name="World 3-2: Cortile Delle Zucche" />
+			<level file="03-25" name="World 3-Castle: " />
+			<level file="03-38" name="World 3-AirShip: " />
+			<level file="03-04" name="BlueSwitch: Fortezza Dell'Interruttore Blu" />
+			<level file="03-33" name="BonusHouse: " />
+		</category>
+	</category>
+
+	<category name="World 4">
+		<category name="SunMoon Terminus">
+			<level file="04-24" name="World 4-Castle: " />
+		</category>
+		<category name="たびのしゅうちゃくてん">
+			<level file="04-24" name="World 4-城: たいけつ! さいはてのしろ" />
+		</category>
+		<category name="Dämmerungsstation">
+			<level file="04-24" name="World 4-Castle: " />
+		</category>
+		<category name="Capolinea SoleLuna">
+			<level file="04-24" name="World 4-Castle: " />
+		</category>
+	</category>
+
+	<category name="Titlescreens">
+		<level file="01-40" name="Titlescreen: Corrupted Game" />
+		<level file="01-10" name="Titlescreen: New File" />
+		<level file="01-11" name="Titlescreen: First Island" />
+		<level file="01-12" name="Titlescreen: Sunlight Canyon" />
+		<level file="01-13" name="Titlescreen: Moonlight Ground" />
+		<level file="01-14" name="Titlescreen: SunMoon Terminus" />
+		<level file="04-10" name="Titlescreen: Bowser Clear" />
+		<level file="04-11" name="Titlescreen: 100% Complete" />
+	</category>
+
+	<category name="Other">
+		<level file="02-41" name="Opening Cutscene" />
+		<level file="08-41" name="Ending Cutscene" />
+		<level file="07-41" name="Credits" />
+	</category>
+
+</levels>
