@@ -475,7 +475,7 @@ void dWMStarCoin_c::beginState_Wait() { }
 void dWMStarCoin_c::executeState_Wait() {
 	int nowPressed = Remocon_GetPressed(GetActiveRemocon());
 
-	if ((GetActiveRemocon()->heldButtons == 0xc10) && (nowPressed & 0xc10)) { // A, B, and Plus
+	if ((GetActiveRemocon()->heldButtons == 0x810) && (nowPressed & 0x810)) { // A, B, and Plus
 		const int lineCountOn = 9, lineCountOff = 2;
 
 		//Turned on messages
@@ -515,9 +515,9 @@ void dWMStarCoin_c::executeState_Wait() {
 		static const wchar_t *hardModeIT[9] = {	// IT messages by Jacopo Plays
 			L"Hai attivato la modalità difficile!",
 			L" ",
-			L"Nella modalità difficile mario morirà",
-			L"ogni volta che prenderà danno, e",
-			L"il timer sarà più corto.",
+			L"Nella modalità difficile mario",
+			L"morirà ogni volta che prende",
+			L"danno, e il timer sarà più corto.",
 			L" ",
 			L"Quindi prendi il tuo Yoshi, e",
 			L"tieni il cappello, sei",
@@ -671,7 +671,7 @@ void dWMStarCoin_c::executeState_Wait() {
 						showSecretMessage(L"Toll!", replayRecordDE, lineCountOn, replayRecordDE2, lineCountOn2);
 					}
 					if (SetGameLanguage == 3){	// IT message by Jacopo Plays
-						showSecretMessage(L"Buono!", replayRecordIT, lineCountOn);
+						showSecretMessage(L"Bene!", replayRecordIT, lineCountOn);
 					}
 				} else {
 					isReplayEnabled = 0;
@@ -686,7 +686,7 @@ void dWMStarCoin_c::executeState_Wait() {
 						showSecretMessage(L"Toll!", replayRecordOffDE, lineCountOff);
 					}
 					if (SetGameLanguage == 3){	// IT message by Jacopo Plays
-						showSecretMessage(L"Buono!", replayRecordOffIT, lineCountOff);
+						showSecretMessage(L"Bene!", replayRecordOffIT, lineCountOff);
 					}
 				}
 			}
