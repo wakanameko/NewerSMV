@@ -54,7 +54,7 @@ notAdjacent:
     addi sp, sp, 0x80
 .endm
 
-.extern daJrClownForPlayer_c__usePlayer	# 0x80810d80
+.extern daJrClownForPlayer_c_usePlayer	# 0x80810d80
 #.global ClownCarPhysicsOverride
 #ClownCarPhysicsOverride:
 #	# r4, r28: thisptr
@@ -66,7 +66,7 @@ notAdjacent:
 #	mr  r4, r28
 #	li r8, 0x1							# orig instruction
 #	blr
-.extern dBg_ctr_c__set_circle 			# PALv1: 0x8007fb80, void(r3(dBg_ctr_c *param_1), r4(dActor_c *self), f1(float left_offset), f2(float top_offset), f3(float diameter), r5(undefined *belowCheck), r6(undefined *aboveCheck), r7(undefined *adjCheck), r8(byte chainlinkMode), r9(byte layer))
+.extern dBg_ctr_c_set_circle 			# PALv1: 0x8007fb80, void(r3(dBg_ctr_c *param_1), r4(dActor_c *self), f1(float left_offset), f2(float top_offset), f3(float diameter), r5(undefined *belowCheck), r6(undefined *aboveCheck), r7(undefined *adjCheck), r8(byte chainlinkMode), r9(byte layer))
 .global ClownCarPhysicsOverride
 ClownCarPhysicsOverride:
 	# r3: isPlayerRiding, r12: belowCheck, r28: apOther, r30: apThis
@@ -94,7 +94,7 @@ ClownCarPhysicsOverride:
 	li r7, 0x0
 	li r8, 0x1
 	li r9, 0x0
-	bl dBg_ctr_c__set_circle
+	bl dBg_ctr_c_set_circle
 
 	popStack
 L_restoreCCPhyOverride:
@@ -137,3 +137,57 @@ BrosIceballDontFreeze:
 L_restoreBroIce:
 	lwz r12, 0x60(r30)						# restore instruction
 	blr
+
+.extern isFinalBattle						# bool, variable
+.extern CreateActor
+.extern _Z28spawnClownAtPlayerLegDoSpawnP5dEn_c	# Clang mangled
+.global spawnClownAtPlayerLeg				# JPNv1:80111f78, PALv1: 0x801122a8
+spawnClownAtPlayerLeg:
+	# (r0: lwz -0x59d4(r13), (r28, r30: Multi Player Balloon pointer?))
+	pushStack
+
+	# Check is in final boss battle
+	lis r3, isFinalBattle@h
+	ori r3, r3, isFinalBattle@l
+	lbz r3, 0x0(r3)
+	cmpwi r3, 0x0
+	beq L_returnSpawnClown
+
+	# Check has mushroom
+	lwz r3, 0x4(r30)
+	rlwinm r3, r3, 24, 28, 31
+	cmpwi r3, 0x1
+	beq L_returnSpawnClown
+
+	mr r3, r30
+	bl _Z28spawnClownAtPlayerLegDoSpawnP5dEn_c
+
+L_returnSpawnClown:
+	popStack
+	cmpwi r0, 0x0
+	blr
+
+#.global doFallDroneClownCar
+#doFallDroneClownCar:
+#	pushStack
+#	# Check is in final boss battle
+#	lis r3, isFinalBattle@h
+#	ori r3, r3, isFinalBattle@l
+#	lbz r3, 0x0(r3)
+#	cmpwi r3, 0x0
+#	beq L_returnfDoFall
+#	
+#	# change state to Drone
+#	lwz        r12, 0x60(r28)
+#	lis        r4, -0x7f66
+#	or         r3, r28, r28
+#	lwz        r12, 0xd4(r12)
+#	subi       r4, r4, 0x66f8
+#	mtctr      r12
+#	bctrl
+#
+#
+#L_returnfDoFall:
+#	popStack
+#	mr r3, r28
+#	blr
