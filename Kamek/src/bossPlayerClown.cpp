@@ -208,7 +208,13 @@ bool ClownCar__collisionCat2_IceBall_15_YoshiIce_HookPatch2(dEn_c *self, ActiveP
 // Iceball Player Collision Hax
 void spawnIceEffectAndDelete(dEn_c *self, dEn_c *player){
 	OSReport("");	// If delete this line, the game will crash. Why?
-	daBrosIceball__executeState_Move_deleteRequest(self);	// 0x807d5644	// old: 0x807d563c
+	daBrosIceball_executeState_Move_deleteRequest(self);	// 0x807d5644	// old: 0x807d563c
+}
+void spawnClownAtPlayerLegDoSpawn(dEn_c *self){
+	Vec spawnPos = {self->pos.x, self->pos.y - 5.0f, self->pos.z};
+	dStageActor_c *spawner = CreateActor(0x12b, 0x1, spawnPos, 0, 0);
+	spawner->speed.y = -0.5f;
+	return;
 }
 
 
@@ -255,7 +261,8 @@ int daClownShot::onCreate() {
 	GreatBalls.category1 = 0x3;
 	GreatBalls.category2 = 0x0;
 	GreatBalls.bitfield1 = 0b01101111;	// 右から, 1マリオ通常, 2マリオ攻撃, 3unk1, 4sprites(), 5balloon, 6コインとか, 7ファイアとアイス, 8unk0
-	GreatBalls.bitfield2 = 0b11111111100000000011000001010000;
+	// GreatBalls.bitfield2 = 0b11111111100000000011000001010000;
+	GreatBalls.bitfield2 = 0xffbafffe;
 	GreatBalls.unkShort1C = 0;
 	GreatBalls.callback = &dEn_c::collisionCallback;
 
